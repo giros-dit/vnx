@@ -1,0 +1,62 @@
+site_name: Virtual Networks over linuX
+copyright: 'Copyright &copy; 2005-2020 by DIT-UPM'
+
+theme:
+  name: material
+  logo: img/logo.svg
+  features:
+    - tabs
+extra_css:
+    - css/extra.css
+markdown_extensions:
+  - admonition
+  - codehilite:
+      guess_lang: false
+  - toc:
+      permalink: false
+
+nav:
+  - Home: 
+    - 'Introduction': 'index.md'
+    - 'News': 'home/news.md'
+    - 'History': 'home/history.md'
+    - 'Publications': 'home/publications.md'
+  - Getting Started:
+    - Installation: 
+      - 'Requirements': 'getting_started/installation/requirements.md'
+      - 'Ubuntu': 'getting_started/installation/ubuntu.md'
+      - 'FAQ': 'getting_started/installation/faq.md'
+    - Root Filesystems:
+      - 'Download': 'getting_started/rootfs/download.md'
+      - 'Customize': 'getting_started/rootfs/customize.md'
+    - Reference: 'getting_started/reference.md'
+    - Updating: 'getting_started/updating.md'
+  - User Guide: 
+    - 'Language Reference': 'user/language.md'
+    - 'Console Management': 'user/console.md'
+    - 'Troubleshooting': 'user/troubleshooting.md'
+    - 'Extension Plugins': 'user/plugins.md'
+  - Tutorials:
+    - Simple Scenarios: 
+      - 'Ubuntu (LXC)': 'tutorials/simple/lxc-tutorial.md'
+      - 'Ubuntu (KVM)': 'tutorials/simple/kvm-tutorial.md'
+      - 'Ubuntu (KVM) & Dynamips': 'tutorials/simple/dynamips.md'
+      - 'Olive': 'tutorials/simple/olive.md'
+      - 'Open vSwitch (OVS)': 'tutorials/simple/ovs.md'
+    - Laboratory Scenarios:     
+      - 'OpenStack': 'tutorials/lab/openstack.md'
+      - 'OpenStack & OpenDaylight': 'tutorials/lab/odl.md'
+      - 'OpenNebula': 'tutorials/lab/opennebula.md'
+      - 'SDN': 'tutorials/lab/sdn.md'
+      - 'Security': 'tutorials/lab/security.md'
+      - 'VPLS': 'tutorials/lab/vpls.md'
+    - VNX Plugins Scenarios:
+      - 'DHCP plugin': 'tutorials/plugins/dhcp.md'
+      - 'OSPF plugin': 'tutorials/plugins/ospf.md'
+
+extra:
+  social:
+    - icon: 'fontawesome/brands/github-alt'
+      link: 'https://github.com/giros-dit/vnx'
+    - icon: 'fontawesome/brands/twitter'
+      link: 'https://twitter.com/vnx_upm'

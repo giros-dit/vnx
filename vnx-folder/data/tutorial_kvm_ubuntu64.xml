@@ -6,8 +6,8 @@
 VNX Sample scenarios
 ~~~~~~~~~~~~~~~~~~~~
 
-Name:        tutorial_lxc_ubuntu64
-Description: As simple tutorial scenario made of 6 LXC Ubuntu virtual machines (4 hosts: h1, h2, h3 and h4; 
+Name:        tutorial_kvm_ubuntu64
+Description: As simple tutorial scenario made of 6 Ubuntu virtual machines (4 hosts: h1, h2, h3 and h4; 
              and 2 routers: r1 and r2) connected through three virtual networks. The host participates 
              in the scenario having a network interface in Net3.     
 
@@ -24,7 +24,7 @@ SPAIN
   xsi:noNamespaceSchemaLocation="/usr/share/xml/vnx/vnx-2.00.xsd">
   <global>
     <version>2.0</version>
-    <scenario_name>tutorial_lxc_ubuntu64</scenario_name>
+    <scenario_name>tutorial_kvm_ubuntu</scenario_name>
     <!--ssh_key>~/.ssh/id_dsa.pub</ssh_key-->
     <automac/>
     <!--vm_mgmt type="none" /-->
@@ -32,21 +32,9 @@ SPAIN
        <host_mapping />
     </vm_mgmt>
     <vm_defaults>
-        <console id="0" display="no"/>
-        <console id="1" display="yes"/>
+	    <console id="0" display="no"/>
+	    <console id="1" display="yes"/>
     </vm_defaults>
-
-    <cmd-seq seq="ls12">ls1,ls2</cmd-seq>
-    <cmd-seq seq="ls123">ls12,ls3</cmd-seq>
-    <cmd-seq seq="ls1234">ls123,ls4</cmd-seq>
-
-    <vnx_cfg>tutorial_lxc_ubuntu.cvnx</vnx_cfg>
-
-    <help>
-        <seq_help seq='start-www'>Start apache2 web server</seq_help>
-        <seq_help seq='stop-www'>Stop apache2 web server</seq_help>
-    </help>
-    
   </global>
 
   <net name="Net0" mode="virtual_bridge" />
@@ -55,8 +43,9 @@ SPAIN
   <net name="Net3" mode="virtual_bridge" />
   <net name="virbr0" mode="virtual_bridge" managed="no"/>
 
-  <vm name="h1" type="lxc" arch="x86_64">
-    <filesystem type="cow">/usr/share/vnx/filesystems/rootfs_lxc_ubuntu64</filesystem>
+  <vm name="h1" type="libvirt" subtype="kvm" os="linux" arch="x86_64">
+    <filesystem type="cow">/usr/share/vnx/filesystems/rootfs_ubuntu</filesystem>
+    <mem>512M</mem>
     <if id="1" net="Net0">
       <ipv4>10.1.0.2/24</ipv4>
       <ipv6>2001:db8:0::2/64</ipv6>
@@ -68,8 +57,9 @@ SPAIN
     <route type="ipv6" gw="2001:db8:0::1">2001:db8::/32</route>
   </vm>
 
-  <vm name="h2" type="lxc" arch="x86_64">
-    <filesystem type="cow">/usr/share/vnx/filesystems/rootfs_lxc_ubuntu64</filesystem>
+  <vm name="h2" type="libvirt" subtype="kvm" os="linux" arch="x86_64">
+    <filesystem type="cow">/usr/share/vnx/filesystems/rootfs_ubuntu</filesystem>
+    <mem>512M</mem>
     <if id="1" net="Net0">
       <ipv4>10.1.0.3/24</ipv4>
       <ipv6>2001:db8:0::3/64</ipv6>
@@ -79,14 +69,11 @@ SPAIN
     </if>
     <route type="ipv4" gw="10.1.0.1">10.1.0.0/16</route>
     <route type="ipv6" gw="2001:db8:0::1">2001:db8::/32</route>
-    <exec seq="ls1" type="verbatim">ls -al /tmp</exec>
-    <exec seq="ls2" type="verbatim">ls -al /root</exec>
-    <exec seq="ls3" type="verbatim">ls -al /usr</exec>
-    <exec seq="ls4" type="verbatim">ls -al /bin</exec>
   </vm>
 
-  <vm name="r1" type="lxc" arch="x86_64">
-    <filesystem type="cow">/usr/share/vnx/filesystems/rootfs_lxc_ubuntu64</filesystem>
+  <vm name="r1" type="libvirt" subtype="kvm" os="linux" arch="x86_64">
+    <filesystem type="cow">/usr/share/vnx/filesystems/rootfs_ubuntu</filesystem>
+    <mem>512M</mem>
     <if id="1" net="Net0">
       <ipv4>10.1.0.1/24</ipv4>
       <ipv6>2001:db8:0::1/64</ipv6>
@@ -107,8 +94,9 @@ SPAIN
     <forwarding type="ip" />
   </vm>
 
-  <vm name="r2" type="lxc" arch="x86_64">
-    <filesystem type="cow">/usr/share/vnx/filesystems/rootfs_lxc_ubuntu64</filesystem>
+  <vm name="r2" type="libvirt" subtype="kvm" os="linux" arch="x86_64">
+    <filesystem type="cow">/usr/share/vnx/filesystems/rootfs_ubuntu</filesystem>
+    <mem>512M</mem>
     <if id="1" net="Net1">
       <ipv4>10.1.1.2/24</ipv4>
       <ipv6>2001:db8:1::2/64</ipv6>
@@ -125,8 +113,9 @@ SPAIN
     <forwarding type="ip" />
   </vm>
 
-  <vm name="h3" type="lxc" arch="x86_64">
-   <filesystem type="cow">/usr/share/vnx/filesystems/rootfs_lxc_ubuntu64</filesystem>
+  <vm name="h3" type="libvirt" subtype="kvm" os="linux" arch="x86_64">
+    <filesystem type="cow">/usr/share/vnx/filesystems/rootfs_ubuntu</filesystem>
+   <mem>512M</mem>
    <if id="1" net="Net2">
       <ipv4>10.1.2.2/24</ipv4>
       <ipv6>2001:db8:2::2/64</ipv6>
@@ -146,8 +135,9 @@ SPAIN
     <exec seq="stop-www" type="verbatim"  ostype="system">service apache2 stop</exec>    
   </vm>
   
-  <vm name="h4" type="lxc" arch="x86_64">
-    <filesystem type="cow">/usr/share/vnx/filesystems/rootfs_lxc_ubuntu64</filesystem>
+  <vm name="h4" type="libvirt" subtype="kvm" os="linux" arch="x86_64">
+    <filesystem type="cow">/usr/share/vnx/filesystems/rootfs_ubuntu</filesystem>
+    <mem>512M</mem>
     <if id="1" net="Net2">
       <ipv4>10.1.2.3/24</ipv4>
       <ipv6>2001:db8:2::3/64</ipv6>
@@ -169,7 +159,7 @@ SPAIN
   
   <host>
     <hostif net="Net3">
-      <ipv4>10.1.3.2/24</ipv4>
+       <ipv4>10.1.3.2/24</ipv4>
       <ipv6>2001:db8:3::2/64</ipv6>
     </hostif>
     <route type="ipv4" gw="10.1.3.1">10.1.0.0/16</route>

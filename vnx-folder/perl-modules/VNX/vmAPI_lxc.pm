@@ -3,9 +3,9 @@
 # This file is a module part of VNX package.
 #
 # Authors: David Fernández
-# Coordinated by: David Fernández (david@dit.upm.es)
+# Coordinated by: David Fernández (david.fernandez@upm.es)
 #
-# Copyright (C) 2016   DIT-UPM
+# Copyright (C) 2022   DIT-UPM
 #           Departamento de Ingenieria de Sistemas Telematicos
 #           Universidad Politecnica de Madrid
 #           SPAIN
@@ -233,10 +233,12 @@ sub define_vm {
                     #print "sname=$sname\n";
                     $error="A LXC vm named '$vm_name' already exists (vm names must be unique along the system).\n" .
                            "That vm seems to belong to VNX scenario '$sname'.\n" .
-                           "If you are sure it is not used, you can destroy it with:\n" .
+                           "If you are sure it is not being used, you can destroy it with:\n" .
                            "    sudo vnx -s $sname --destroy\n" .
-                           "Or, alternatively, delete that VNX scenario directory with:\n" .
-                           "    sudo rm -rf $vnx_dir/scenarios/$sname";
+                           "Or, alternatively, completely restart VNX host with:\n" .
+                           "    sudo vnx --clean-host\n" .
+                           "WARNING: the option --clean-host destroys all libvirt virtual machines (even the ones \n" .
+                           "         not started by VNX) and all the containers created by VNX.";
         	} else {
                     $error="A LXC vm named '$vm_name' already exists (vm names must be unique along the system).\n" .
                            "The link '$lxc_dir/$vm_name' points to '$dir'. Check the state of the vm with:\n" .
@@ -400,7 +402,7 @@ back_to_user();
 
 		my $lxc_format;
 
-        if ( $lxc_vers =~ /^2\.1/ or $lxc_vers =~ /^3\./ or $lxc_vers =~ /^4\./ ) {
+        if ( $lxc_vers =~ /^2\.1/ or $lxc_vers =~ /^3\./ or $lxc_vers =~ /^4\./ or $lxc_vers =~ /^5\./ ) {
         	$lxc_format = 'new';
 			if ( $lxc_configfile_vers eq 'old' ) {
         		wlog (V, "LXC config file in old format. Converting to new format.", $logp);
@@ -413,7 +415,7 @@ back_to_user();
 		        my $res = $execution->execute( $logp, "vnx_convert_lxc_config -q -o $vm_lxc_config" );
 			}
         }
-        if ( $lxc_vers =~ /^3\./ or $lxc_vers =~ /^4\./ ) {
+        if ( $lxc_vers =~ /^3\./ or $lxc_vers =~ /^4\./ or $lxc_vers =~ /^5\./) {
 			system ("sed -i -e 's/ubuntu.common.conf/common.conf/' $vm_lxc_config");        
         }
         wlog (V, "LXC version: $lxc_vers ($lxc_format format)", $logp);
@@ -756,16 +758,6 @@ back_to_user();
 			# End of old format configuration
 		}
 
-#        # Convert config file to lxc 2.1 format if 2.1 is used (default in ubuntu 17.10 or newer)
-#        my $lxc_vers = `lxc-start --version`;
-#        wlog (VVV, "LXC version: $lxc_vers", $logp);
-#
-#        if ( $lxc_vers =~ /^2\.1/ or $lxc_vers =~ /^3\./) {
-#              wlog (VVV, "Updating $vm_lxc_config to new LXC format", $logp);
-#              #$execution->execute( $logp, $bd->get_binaries_path_ref->{"lxc-update-config"} . " -c $vm_lxc_config");
-#              $execution->execute( $logp, "lxc-update-config -c $vm_lxc_config");
-#        }
-
         # Call the VM autoconfiguration function
         if ($platform[0] eq 'Linux'){
             if    ($platform[1] eq 'Ubuntu')      { autoconfigure_debian_ubuntu ($vm_doc, $rootfs_mount_dir, 'ubuntu') }           
@@ -992,7 +984,7 @@ sub start_vm {
                     open HOSTLINES, ">>" . $dh->get_sim_dir . "/hostlines"
                         or $execution->smartdie("can not open $dh->get_sim_dir/hostlines\n")
                         unless ( $execution->get_exe_mode() eq $EXE_DEBUG );
-                    print HOSTLINES $net{'vm'}->addr() . " $vm_name\n";
+                    print HOSTLINES $net{'vm'}->addr() . " " . $etchosts_prefix . $vm_name . "\n";
                     close HOSTLINES;
                 }               
             }

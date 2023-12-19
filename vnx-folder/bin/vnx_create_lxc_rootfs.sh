@@ -147,7 +147,7 @@ function create_new_rootfs {
   # Change rootfs config to adapt it to the directory where is has been downloaded
   # Get LXC version on this system
   LXCVERS=$( lxc-start --version )
-  [[ "$LXCVERS" =~ ^(2\.1|3\.) ]] && LXCVERS=new || LXCVERS=old
+  [[ "$LXCVERS" =~ ^(2\.1|3\.|4\.|5\.) ]] && LXCVERS=new || LXCVERS=old
   # Get format version of image config file
   grep -q 'lxc.rootfs.path' ${ROOTFSNAME}/config && CONFIGVERS=new || CONFIGVERS=old
   echo "LXCVERS=$LXCVERS; CONFIGVERS=$CONFIGVERS"

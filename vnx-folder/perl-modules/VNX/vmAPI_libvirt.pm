@@ -723,7 +723,8 @@ user();
 	        ($merged_type eq "libvirt-kvm-android") || ($merged_type eq "libvirt-kvm-wanos")   ||
 	        ($merged_type eq "libvirt-kvm-netbsd")  || ($merged_type eq "libvirt-kvm-openbsd") ||
 	        ($merged_type eq "libvirt-kvm-cisco")   || ($merged_type eq "libvirt-kvm-extreme") || 
-	        ($merged_type eq "libvirt-qemu-linux")  || ($merged_type eq "libvirt-kvm-cisco-nx") ) {
+	        ($merged_type eq "libvirt-qemu-linux")  || ($merged_type eq "libvirt-kvm-cisco-nx")||
+	        ($merged_type eq "libvirt-kvm-pica8") ) {
 
         # Create vnxboot.xml file under $sdisk_content directory
         unless ( $execution->get_exe_mode() eq $EXE_DEBUG || $merged_type eq "libvirt-kvm-android" || $merged_type eq "libvirt-kvm-wanos" ) {
@@ -778,11 +779,12 @@ user();
 		$init_xml = XML::LibXML->createDocument( "1.0", "UTF-8" );
 		my $domain_tag = $init_xml->createElement('domain');
 		$init_xml->addChild($domain_tag);
-        if ( ($merged_type eq "libvirt-kvm-linux")   || ($merged_type eq "libvirt-kvm-freebsd")     ||
-             ($merged_type eq "libvirt-kvm-olive")   || ($merged_type eq "libvirt-kvm-android")     || 
-             ($merged_type eq "libvirt-kvm-wanos")   || ($merged_type eq "libvirt-kvm-netbsd")      ||
+        if ( ($merged_type eq "libvirt-kvm-linux")   || ($merged_type eq "libvirt-kvm-freebsd")  ||
+             ($merged_type eq "libvirt-kvm-olive")   || ($merged_type eq "libvirt-kvm-android")  || 
+             ($merged_type eq "libvirt-kvm-wanos")   || ($merged_type eq "libvirt-kvm-netbsd")   ||
              ($merged_type eq "libvirt-kvm-openbsd") || ($merged_type eq "libvirt-kvm-cisco-nx") || 
-	         ($merged_type eq "libvirt-kvm-cisco")   || ($merged_type eq "libvirt-kvm-extreme") ) {
+	         ($merged_type eq "libvirt-kvm-cisco")   || ($merged_type eq "libvirt-kvm-extreme")  ||
+	         ($merged_type eq "libvirt-kvm-pica8") ) {
     		# Note: changed the first line to 
     		# <domain type='qemu' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
     		# to allow the use of <qemu:commandline> tag to especify the bios in Olive routers
@@ -897,8 +899,8 @@ user();
         } 
 
         # main <disk> tag --> main root filesystem
-		if ($merged_type eq 'libvirt-kvm-extreme') {
-	    	# Extreme does not support virtio drivers
+		if ($merged_type eq 'libvirt-kvm-extreme' || $merged_type eq 'libvirt-kvm-pica8') {
+	    	# Extreme and Pica8 do not support virtio drivers
 	    	$disk_prefix = 'hd';
     	    $disk_a = 'hda';
         	$disk_b = 'hdb';        
@@ -1225,7 +1227,8 @@ user();
 				$mac =~ s/,//;
 				$mng_if_mac = $mac;	
 			 	         
-			    if ( ( $merged_type eq 'libvirt-kvm-extreme' ) || ( $merged_type eq 'libvirt-kvm-cisco' ) || ($merged_type eq "libvirt-kvm-cisco-nx") ) {
+			    if ( ( $merged_type eq 'libvirt-kvm-extreme' ) || ( $merged_type eq 'libvirt-kvm-cisco' ) ||
+			         ( $merged_type eq "libvirt-kvm-cisco-nx") || ( $merged_type eq 'libvirt-kvm-pica8' ) ) {
 
 					$interface_tag = $init_xml->createElement('interface');
 		            $devices_tag->addChild($interface_tag);
@@ -1593,14 +1596,16 @@ user();
 		
 		
         if ( $mng_if_exists && 
-             $merged_type ne 'libvirt-kvm-android' && 
-             $merged_type ne 'libvirt-kvm-extreme' &&      
-             $merged_type ne 'libvirt-kvm-cisco'   && 
-             $merged_type ne "libvirt-kvm-cisco-nx" ) {      
+             $merged_type ne 'libvirt-kvm-android'  && 
+             $merged_type ne 'libvirt-kvm-extreme'  &&      
+             $merged_type ne 'libvirt-kvm-cisco'    && 
+             $merged_type ne "libvirt-kvm-cisco-nx" &&
+             $merged_type ne "libvirt-kvm-pica8" ) {      
 		
             # -device rtl8139,netdev=lan1 -netdev tap,id=lan1,ifname=ubuntu-e0,script=no,downscript=no
            	my $mgmt_eth_type;
-			if ( $os_subtype eq 'cumulus' || $merged_type eq 'libvirt-kvm-linux' || $merged_type eq "libvirt-qemu-linux"
+			if ( $os_subtype eq 'cumulus' || $merged_type eq 'libvirt-kvm-linux' || 
+			     $merged_type eq "libvirt-qemu-linux" || $merged_type eq 'libvirt-kvm-pica8'
 			) {
             	$mgmt_eth_type = 'e1000'
 			} else {
@@ -1958,7 +1963,8 @@ sub undefine_vm {
          ($merged_type eq "libvirt-kvm-android") || ($merged_type eq "libvirt-kvm-wanos")   || 
          ($merged_type eq "libvirt-kvm-netbsd")  || ($merged_type eq "libvirt-kvm-openbsd") ||
          ($merged_type eq "libvirt-kvm-cisco")   || ($merged_type eq "libvirt-kvm-extreme") ||
-         ($merged_type eq "libvirt-qemu-linux")  || ($merged_type eq "libvirt-kvm-cisco-nx") ) {
+         ($merged_type eq "libvirt-qemu-linux")  || ($merged_type eq "libvirt-kvm-cisco-nx")||
+         ($merged_type eq "libvirt-kvm-pica8") ) {
 
         wlog (V, "Connecting to $hypervisor hypervisor...", $logp);
         eval { 
@@ -2041,8 +2047,8 @@ sub start_vm {
          ($merged_type eq "libvirt-kvm-android") || ($merged_type eq "libvirt-kvm-wanos")   ||
          ($merged_type eq "libvirt-kvm-netbsd")  || ($merged_type eq "libvirt-kvm-openbsd") ||
          ($merged_type eq "libvirt-kvm-cisco")   || ($merged_type eq "libvirt-kvm-extreme") ||
-         ($merged_type eq "libvirt-qemu-linux")  || ($merged_type eq "libvirt-kvm-cisco-nx") ) {
-         	
+         ($merged_type eq "libvirt-qemu-linux")  || ($merged_type eq "libvirt-kvm-cisco-nx")||
+         ($merged_type eq "libvirt-kvm-pica8") ) {
 
         wlog (V, "Connecting to $hypervisor hypervisor...", $logp);
         eval { 
@@ -2163,7 +2169,7 @@ root();
                             open HOSTLINES, ">>" . $dh->get_sim_dir . "/hostlines"
                                 or $execution->smartdie("can not open $dh->get_sim_dir/hostlines\n")
                                 unless ( $execution->get_exe_mode() eq $EXE_DEBUG );
-                            print HOSTLINES $net{'vm'}->addr() . " $vm_name\n";
+							print HOSTLINES $net{'vm'}->addr() . " " . $etchosts_prefix . $vm_name . "\n";                            
                             close HOSTLINES;
 user();                            
                         }               
@@ -2222,7 +2228,8 @@ sub shutdown_vm {
          ($merged_type eq "libvirt-kvm-android") || ($merged_type eq "libvirt-kvm-wanos")   ||
          ($merged_type eq "libvirt-kvm-netbsd")  || ($merged_type eq "libvirt-kvm-openbsd") ||
          ($merged_type eq "libvirt-kvm-cisco")   || ($merged_type eq "libvirt-kvm-extreme") ||
-         ($merged_type eq "libvirt-qemu-linux")  || ($merged_type eq "libvirt-kvm-cisco-nx") ) {
+         ($merged_type eq "libvirt-qemu-linux")  || ($merged_type eq "libvirt-kvm-cisco-nx")||
+         ($merged_type eq "libvirt-kvm-pica8") ) {         
 
         wlog (V, "Connecting to $hypervisor hypervisor...", $logp);
         eval { 
@@ -2315,8 +2322,9 @@ sub suspend_vm {
          ($merged_type eq "libvirt-kvm-android") || ($merged_type eq "libvirt-kvm-wanos")   ||
          ($merged_type eq "libvirt-kvm-netbsd")  || ($merged_type eq "libvirt-kvm-openbsd") ||
          ($merged_type eq "libvirt-kvm-cisco")   || ($merged_type eq "libvirt-kvm-extreme") ||
-         ($merged_type eq "libvirt-qemu-linux")  || ($merged_type eq "libvirt-kvm-cisco-nx") ) {
-
+         ($merged_type eq "libvirt-qemu-linux")  || ($merged_type eq "libvirt-kvm-cisco-nx")||
+         ($merged_type eq "libvirt-kvm-pica8") ) {
+         
         wlog (V, "Connecting to $hypervisor hypervisor...", $logp);
         eval { 
 root();
@@ -2387,7 +2395,8 @@ sub resume_vm {
          ($merged_type eq "libvirt-kvm-android") || ($merged_type eq "libvirt-kvm-wanos")   ||
          ($merged_type eq "libvirt-kvm-netbsd")  || ($merged_type eq "libvirt-kvm-openbsd") ||
          ($merged_type eq "libvirt-kvm-cisco")   || ($merged_type eq "libvirt-kvm-extreme") ||
-         ($merged_type eq "libvirt-qemu-linux")  || ($merged_type eq "libvirt-kvm-cisco-nx") ) {
+         ($merged_type eq "libvirt-qemu-linux")  || ($merged_type eq "libvirt-kvm-cisco-nx")||
+         ($merged_type eq "libvirt-kvm-pica8") ) {
 
         wlog (V, "Connecting to $hypervisor hypervisor...", $logp);
         eval { 
@@ -2489,7 +2498,8 @@ user();
              ($merged_type eq "libvirt-kvm-freebsd") || ($merged_type eq "libvirt-kvm-olive")   ||
              ($merged_type eq "libvirt-kvm-netbsd")  || ($merged_type eq "libvirt-kvm-openbsd") ||
              ($merged_type eq "libvirt-kvm-cisco")   || ($merged_type eq "libvirt-kvm-extreme") ||
-             ($merged_type eq "libvirt-qemu-linux")  || ($merged_type eq "libvirt-kvm-cisco-nx") ) {
+             ($merged_type eq "libvirt-qemu-linux")  || ($merged_type eq "libvirt-kvm-cisco-nx")||
+             ($merged_type eq "libvirt-kvm-pica8") ) {
 
         wlog (V, "Connecting to $hypervisor hypervisor...", $logp);
         eval { 
@@ -2564,8 +2574,8 @@ sub restore_vm {
          ($merged_type eq "libvirt-kvm-android") || ($merged_type eq "libvirt-kvm-wanos")   ||
          ($merged_type eq "libvirt-kvm-netbsd")  || ($merged_type eq "libvirt-kvm-openbsd") ||
          ($merged_type eq "libvirt-kvm-cisco")   || ($merged_type eq "libvirt-kvm-extreme") ||
-         ($merged_type eq "libvirt-qemu-linux")  || ($merged_type eq "libvirt-kvm-cisco-nx") ) {
-       
+         ($merged_type eq "libvirt-qemu-linux")  || ($merged_type eq "libvirt-kvm-cisco-nx")||
+         ($merged_type eq "libvirt-kvm-pica8") ) {
 	    
         wlog (V, "Connecting to $hypervisor hypervisor...", $logp);
         eval { 
@@ -3230,9 +3240,9 @@ sub execute_cmd {
             $execution->execute( $logp, $bd->get_binaries_path_ref->{"umount"} . " " . $sdisk_content );
 	    }
 
-	} elsif ( ($merged_type eq "libvirt-kvm-android") || ($merged_type eq "libvirt-kvm-wanos")   ||
-	          ($merged_type eq "libvirt-kvm-cisco")   || ($merged_type eq "libvirt-kvm-extreme") || 
-	          ($merged_type eq "libvirt-kvm-cisco-nx") ) {
+	} elsif ( ($merged_type eq "libvirt-kvm-android")  || ($merged_type eq "libvirt-kvm-wanos")   ||
+	          ($merged_type eq "libvirt-kvm-cisco")    || ($merged_type eq "libvirt-kvm-extreme") || 
+	          ($merged_type eq "libvirt-kvm-cisco-nx") || ($merged_type eq "libvirt-kvm-pica8") ) {
 		$error = "Command execution not supported for $merged_type"
 	}
 	

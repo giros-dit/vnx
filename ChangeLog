@@ -1,5 +1,17 @@
+19/12/23
+
+- CheckSemantics: added a check for the net in a connection tag to exist
+- Updated --modify-rootfs option to correctly check version 4.0 of LXC
+- CheckSemantics: modified to allow multiple OpenFlow versions in of_version attribute of <net>
+- Implemented the <vm_mgmt type="net"> 
+- Added --no-virtio option for --modify-rootfs and --create-rootfs options
+- Updated vnx.pl and vmAPI_lxc.pm to check version 5.0 of LXC (included in Ubuntu 22.04)
+- Added new LXC config parameter to allow LXC consoles based on lxc-attach instead of lxc-console. Allowed values: lxc-attach/lxc-console. Default value: lxc-console. 
+- Corrected bug that prevented the creation of the .ssh/config file.
+- Added missing code in bridges_destroy in vnx.pl to delete veth links of veth mode nets. 
 
 26/06/2020
+
 - Implemented the creation of SSH config files to facilitate connecting to VMs through management interfaces. That files are only
   created when management interfaces are activated (net or private) and a <ssh_key> tag is included.  
 - Corrected a the behavior of <ssh_key> tag when a "~/" reference to home directory is used. Now "~/" points to the home directory
@@ -8,6 +20,7 @@
   command message; and modified vmAPI_libvirt to include -F option in "qemu-image create".   
 
 16/3/2020
+
 - Modified vnx_autoconfigure to avoid the access from vnxaced to the full XML (an access to $dh prevented it to work).
 - vmAPI_lxc: created a link in /var/run/netns to make the containers network namespaces visible to be used by "ip netns" command.
 - vnx.pl and CheckSemantics: modified to allow use of relative paths in ssh_key tags.

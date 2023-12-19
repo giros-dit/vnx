@@ -720,6 +720,7 @@ sub start_vm {
                     or $execution->smartdie("can not open $dh->get_sim_dir/hostlines\n")
                     unless ( $execution->get_exe_mode() eq $EXE_DEBUG );
                     print HOSTLINES $net{'vm'}->addr() . " $vm_name\n";
+					print HOSTLINES $net{'vm'}->addr() . " " . $etchosts_prefix . $vm_name . "\n";                    
                     close HOSTLINES;           
             }                             
         }

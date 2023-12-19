@@ -57,6 +57,7 @@ our @EXPORT = qw(
     $uid_name_orig
     $vmfs_on_tmp
     $ipv6_enabled
+    $etchosts_prefix
     $hline
     $hline10
     $hline50
@@ -185,7 +186,8 @@ our $vmfs_on_tmp;   # Loads the value of vmfs_on_tmp global config value
                     # Used to move the cow and sdisk filesystems to the tmp directory
                     # (used to solve a problem in DIT-UPM laboratories, where root user 
                     # cannot write to network-mounted user directories)  
-our $ipv6_enabled;  # Tells if IPv6 is enabled on the system running VNX                    
+our $ipv6_enabled;  # Tells if IPv6 is enabled on the system running VNX
+our $etchosts_prefix; # Prefix to be added in /etc/hosts entries when <host_mapping> is used                  
                     
 our $hline10 = "----------"; # Just a horizontal line of 10 '-'
 our $hline50 = "--------------------------------------------------"; # Just a horizontal line of 50 '-'

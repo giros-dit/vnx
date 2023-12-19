@@ -567,8 +567,6 @@ sub autoconfigure_debian_ubuntu {
 	        #print RULES "KERNEL==\"eth*\", SYSFS{address}==\"" . $mac . "\", NAME=\"eth" . $id ."\"\n\n";
 	    }
 
-
-
         print INTERFACES "\n$if_tag $if_name\n";
 
         my @ipv4_tag_list = $if->getElementsByTagName("ipv4");

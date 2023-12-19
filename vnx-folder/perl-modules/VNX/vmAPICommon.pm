@@ -32,6 +32,7 @@ use strict;
 use warnings;
 use Exporter;
 use B::Deparse ();
+use VNX::IPChecks;
 
 our @ISA    = qw(Exporter);
 our @EXPORT = qw(	
@@ -179,6 +180,16 @@ sub open_console {
 	my @vm_type = $dh->get_vm_type($vm);
 
     wlog (VVV, "con_id=$con_id, cons_type=$cons_type, cons_Par=$consPar", $logp);    
+
+    my $console_term_mode = str(get_conf_value ($vnxConfigFile, 'general', 'console_term_mode', 'root'));
+    my $lxc_console_cmd = str(get_conf_value ($vnxConfigFile, 'lxc', 'lxc_console_cmd', 'root'));
+    if ($lxc_console_cmd eq '') {
+		$lxc_console_cmd = 'lxc-console'; # default value
+	} elsif ($lxc_console_cmd ne 'lxc-attach' and $lxc_console_cmd ne 'lxc-console') {
+        wlog (N, "ERROR: lxc_console_cmd config value unknown ($lxc_console_cmd). Allowed values: lxc_console/lxc_attach. Using default value: lxc-console)", $logp);	
+		$lxc_console_cmd = 'lxc-console';
+	}
+
 	if ($cons_type eq 'vnc_display') {
         $exeLine = "virt-viewer -c $hypervisor $vm_name &";
         #$execution->execute_root( $logp, "virt-viewer -c $hypervisor $vm_name &");
@@ -236,13 +247,16 @@ sub open_console {
 		$command = "telnet localhost $consPar";		
 		
     } elsif ($cons_type eq 'lxc') {
+		if ($lxc_console_cmd eq 'lxc-console') {
         $command = "lxc-console -n $vm_name";
-						
+        } elsif ($lxc_console_cmd eq 'lxc-attach') {
+            #$command = "lxc-attach $vm_name -- bash -c \"while true; do cat /etc/issue.net; echo; login; done\"";
+            $command = "lxc-attach $vm_name -- bash -c \"echo -n system booting; while [ -e /run/nologin ]; do echo -n .; sleep 2; done; while true; do clear; cat /etc/issue.net; echo; login; done\"";
+		}
 	} else {
 		wlog (N, "WARNING (vm=$vm_name): unknown console type ($cons_type)");
 	}
 	
-    my $console_term_mode = str(get_conf_value ($vnxConfigFile, 'general', 'console_term_mode', 'root'));
     my $start_console_as_user = ! empty($console_term_mode) && $console_term_mode eq 'user';
     wlog (VVV, "console_term_mode=$console_term_mode, start_console_as_user=$start_console_as_user, user=" . $>, $logp);	
 	
@@ -267,8 +281,12 @@ sub open_console {
             if ($mode eq 'console') {
                 $exeLine = "xfce4-terminal --title '$vm_name - console #$con_id' --hide-menubar -e '$command'";
             } else {
+                if ($lxc_console_cmd eq 'lxc-attach') {
+                    $exeLine = "xfce4-terminal --title '$vm_name - console #$con_id' --hide-menubar -e '$command'"; 
+			    } elsif ($lxc_console_cmd eq 'lxc-console') {
                 #$exeLine = "xfce4-terminal --title '$vm_name - console #$con_id' --hide-menubar -x expect -c 'spawn $command; sleep 10; send k\\n; sleep 1; send \\003; interact'";
                 $exeLine = "xfce4-terminal --title '$vm_name - console #$con_id' --hide-menubar -x expect -c 'spawn $command; sleep 5; send \\015; interact'";
+				}
             }
 		} else {
 			$execution->smartdie ("unknown value ($console_term) of console_term parameter in $vnxConfigFile");
@@ -553,7 +571,7 @@ sub get_admin_address {
     my $vmmgmt_type = shift;
 
     my $logp = "get_admin_address-$vm_name> ";
-
+	my $doc = $dh->get_doc;
     my %ip;
 
     if ($seed eq "file"){
@@ -585,21 +603,62 @@ sub get_admin_address {
             # don't assign the hostip
             wlog (VV, "get_vmmgmt_hostip=" . $dh->get_vmmgmt_hostip, $logp);
 
-            my $hostip = NetAddr::IP->new($dh->get_vmmgmt_hostip."/".$dh->get_vmmgmt_mask);
-            if ($hostip > $net + $dh->get_vmmgmt_offset &&
-                $hostip <= $net + $dh->get_vmmgmt_offset + $seed + 1) {
-                $seed++;
-            }
-	
-            # check to make sure that the address space won't wrap
-            if ($dh->get_vmmgmt_offset + $seed > (1 << (32 - $dh->get_vmmgmt_mask)) - 3) {
-                $execution->smartdie ("IPv4 address exceeded range of available admin addresses. \n");
-            }
-	
-            # return an address in the vmmgmt subnet
-            $ip{'vm'}   = NetAddr::IP->new($net)  + $dh->get_vmmgmt_offset + $seed + 1;
-            $ip{'host'} = $hostip;
-            wlog (VV, "returns: addr_vm=". $ip{'vm'}->addr . ", mask=" . $ip{'vm'}->mask . ", addr_host=" . $ip{'host'}->addr, $logp);
+			if( $doc->exists("/vnx/vm[\@name='$vm_name']/if[\@id='0']/ipv4")) {
+			    my @ipv4 = ( $doc->findnodes("/vnx/vm[\@name='$vm_name']/if[\@id='0']/ipv4")); 
+			    #print "******* found\n";
+                my $ip_addr = text_tag($ipv4[0]);
+                #print "+++++++++\n";
+                my $ipv4_effective_mask = "255.255.255.0"; # Default mask value        
+				my $mask_length;
+                if (valid_ipv4_with_mask($ip_addr)) {
+                    # Implicit slashed mask in the address
+                    $ip_addr =~ /.(\d+)$/;
+                    $mask_length = $1;
+                    $ipv4_effective_mask = slashed_to_dotted_mask($mask_length);
+                    # The IP need to be chomped of the mask suffix
+                    $ip_addr =~ /^(\d+).(\d+).(\d+).(\d+).*$/;
+                    $ip_addr = "$1.$2.$3.$4";
+				    #print "******* mask_length=$mask_length\n";
+                    
+                } elsif ($ip_addr ne 'dhcp') { 
+                    # Check the value of the mask attribute
+                    my $ipv4_mask_attr = $ipv4[0]->getAttribute("mask");
+                    if (str($ipv4_mask_attr) ne "") {
+                        # Slashed or dotted?
+                        if (valid_dotted_mask($ipv4_mask_attr)) {
+                            $ipv4_effective_mask = $ipv4_mask_attr;
+                        }
+                        else {
+                            $ipv4_mask_attr =~ /.(\d+)$/;
+		                    $mask_length = $1;
+                            $ipv4_effective_mask = slashed_to_dotted_mask($mask_length);
+                        }
+                    } else {
+                        wlog (N, "$hline\nWARNING (vm=$vm_name): no mask defined for $ip_addr address of interface 0. Using default mask ($ipv4_effective_mask)\n$hline");
+                    }
+                }
+
+	            $ip{'vm'}   = NetAddr::IP->new($ip_addr . "/" .$mask_length);
+	            $ip{'host'} = NetAddr::IP->new($dh->get_vmmgmt_hostip."/".$dh->get_vmmgmt_mask);
+
+
+			} else {
+	            my $hostip = NetAddr::IP->new($dh->get_vmmgmt_hostip."/".$dh->get_vmmgmt_mask);
+	            if ($hostip > $net + $dh->get_vmmgmt_offset &&
+	                $hostip <= $net + $dh->get_vmmgmt_offset + $seed + 1) {
+	                $seed++;
+	            }
+		
+	            # check to make sure that the address space won't wrap
+	            if ($dh->get_vmmgmt_offset + $seed > (1 << (32 - $dh->get_vmmgmt_mask)) - 3) {
+	                $execution->smartdie ("IPv4 address exceeded range of available admin addresses. \n");
+	            }
+		
+	            # return an address in the vmmgmt subnet
+	            $ip{'vm'}   = NetAddr::IP->new($net)  + $dh->get_vmmgmt_offset + $seed + 1;
+	            $ip{'host'} = $hostip;
+	            wlog (VV, "returns: addr_vm=". $ip{'vm'}->addr . ", mask=" . $ip{'vm'}->mask . ", addr_host=" . $ip{'host'}->addr, $logp);
+			}
         } else {
             $ip{'vm'}   = NetAddr::IP->new('0.0.0.0');
             $ip{'host'} = NetAddr::IP->new('0.0.0.0');

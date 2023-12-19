@@ -258,11 +258,9 @@ sub check_doc {
     foreach my $ssh_key ($doc->getElementsByTagName("ssh_key")) {
 	   my $ssh_key = &do_path_expansion(text_tag($ssh_key));
 	   #return "$ssh_key is not a valid absolute filename" unless &valid_absolute_filename($ssh_key);
-	   unless (-r $ssh_key) {
 root();
-	       if (-r $ssh_key) {
-                return "$ssh_key (ssh key file) does not exist or is not readable" unless (-r $ssh_key);
-	       }	
+	   unless (-r $ssh_key) {
+			return "$ssh_key (ssh key file) does not exist or is not readable" unless (-r $ssh_key);
 user();
 	   }
     }
@@ -378,12 +376,9 @@ user();
     my %conn_names;
 
     # Process <net> list
+    # Check first for duplicated names or incorrect net names
     foreach my $net ($doc->getElementsByTagName("net")) {
-
-        # To get name, type and mode attribute
         my $name = $net->getAttribute("name");
-        my $type = $net->getAttribute("type");
-        my $mode = $net->getAttribute("mode");
       
         # To check name length
         my $upper = $MAX_NAME_LENGTH + 1;
@@ -407,6 +402,15 @@ user();
         else {
             $net_names{$name} = 1;
         }
+    }
+
+    # Check other parameters
+    foreach my $net ($doc->getElementsByTagName("net")) {
+
+        # To get name, type and mode attribute
+        my $name = $net->getAttribute("name");
+        my $type = $net->getAttribute("type");
+        my $mode = $net->getAttribute("mode");
 
         my $capture_file = $net->getAttribute("capture_file");
         my $capture_expression = $net->getAttribute("capture_expression");
@@ -544,9 +548,15 @@ user();
         if ( !empty($of_version) && $mode ne 'openvswitch' ) {
             return "'of_version' attribute can only be used in 'openvswitch' based networks (used in <net name='$name'>)"
         } 
-        if ( !empty($of_version) && $of_version ne 'OpenFlow10' && $of_version ne 'OpenFlow12' && $of_version ne 'OpenFlow13' && 
-             $of_version ne 'OpenFlow14' && $of_version ne 'OpenFlow15' && $of_version ne 'OpenFlow16' ) {
-            return "incorrect value in <net> 'of_version' attribute. Valid values: OpenFlow10, OpenFlow12, OpenFlow13"
+        if ( !empty($of_version) ) {
+
+            my @of_vers = split /,/, $of_version;
+            foreach my $of_value (@of_vers) {
+                if ( $of_value ne 'OpenFlow10' && $of_value ne 'OpenFlow12' && $of_value ne 'OpenFlow13' && 
+                     $of_value ne 'OpenFlow14' && $of_value ne 'OpenFlow15' && $of_value ne 'OpenFlow16' ) {
+                         return "incorrect value in <net> 'of_version' attribute ($of_value). Valid values: OpenFlow10, OpenFlow12, OpenFlow13, OpenFlow14, OpenFlow15, OpenFlow16"
+                }
+            }
         } 
           
         if ( !empty($controller) ) {
@@ -592,6 +602,10 @@ user();
             my $conn_name=$connection->getAttribute("name");
             my $conn_type=$connection->getAttribute("type");
 
+            # Check that net defined in attribute net exists 
+            unless ( defined($net_names{$net_to_connect}) ) {
+                return "net '$net_to_connect' defined for connection '$conn_name' of switch '$name' does not exist: it must be defined in a <net> tag";
+            }
             # Check connection name uniqueness 
             if (exists $conn_names{$conn_name}) {
                 return "duplicated inter-switch connection name (net=$net_to_connect, coon_name=$conn_name)";
@@ -730,7 +744,7 @@ user();
             }
 
             # 9d. To check that there is a net with this name or "lo"
-            unless (($net eq "lo") || ($net eq "vm_mgmt") || ($net eq "unconnected") || (defined($net_names{$net}))) {
+            unless (($net eq "lo") || ($net eq "vm_mgmt") || ($net eq "unconnected") || (defined($net_names{$net})) || ($id eq "0") ) {
                 return "net $net defined for interface $id of virtual machine $name is not valid: it must be defined in a <net> tag (or use \"lo\")";
             }
          

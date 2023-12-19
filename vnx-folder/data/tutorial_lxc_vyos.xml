@@ -52,7 +52,7 @@ SPAIN
   <net name="virbr0" mode="virtual_bridge" managed="no"/>
 
   <vm name="h1" type="lxc" arch="x86_64">
-    <filesystem type="cow">/usr/share/vnx/filesystems/rootfs_lxc64</filesystem>
+    <filesystem type="cow">/usr/share/vnx/filesystems/rootfs_lxc_ubuntu64</filesystem>
     <if id="1" net="Net0">
       <ipv4>10.1.0.2/24</ipv4>
       <ipv6>2001:db8:0::2/64</ipv6>
@@ -60,12 +60,12 @@ SPAIN
     <if id="9" net="virbr0">
       <ipv4>dhcp</ipv4>
     </if>
-    <route type="ipv4" gw="10.1.0.1">default</route>   
-    <route type="ipv6" gw="2001:db8:0::1">default</route>
+    <route type="ipv4" gw="10.1.0.1">10.1.0.0/16</route>   
+    <route type="ipv6" gw="2001:db8:0::1">2001:db8::/32</route>
   </vm>
 
   <vm name="h2" type="lxc" arch="x86_64">
-    <filesystem type="cow">/usr/share/vnx/filesystems/rootfs_lxc64</filesystem>
+    <filesystem type="cow">/usr/share/vnx/filesystems/rootfs_lxc_ubuntu64</filesystem>
     <if id="1" net="Net0">
       <ipv4>10.1.0.3/24</ipv4>
       <ipv6>2001:db8:0::3/64</ipv6>
@@ -73,8 +73,8 @@ SPAIN
     <if id="9" net="virbr0">
       <ipv4>dhcp</ipv4>
     </if>
-    <route type="ipv4" gw="10.1.0.1">default</route>
-    <route type="ipv6" gw="2001:db8:0::1">default</route>
+    <route type="ipv4" gw="10.1.0.1">10.1.0.0/16</route>
+    <route type="ipv6" gw="2001:db8:0::1">2001:db8::/32</route>
     <exec seq="ls1" type="verbatim">ls -al /tmp</exec>
     <exec seq="ls2" type="verbatim">ls -al /root</exec>
     <exec seq="ls3" type="verbatim">ls -al /usr</exec>
@@ -116,13 +116,13 @@ SPAIN
     <if id="9" net="virbr0">
       <ipv4>dhcp</ipv4>
     </if>
-    <route type="ipv4" gw="10.1.1.1">default</route>
+    <route type="ipv4" gw="10.1.1.1">10.1.0.0/16</route>
     <route type="ipv6" gw="2001:db8:1::1">2001:db8:0::/64</route>
     <forwarding type="ip" />
   </vm>
 
   <vm name="h3" type="lxc" arch="x86_64">
-   <filesystem type="cow">/usr/share/vnx/filesystems/rootfs_lxc64</filesystem>
+   <filesystem type="cow">/usr/share/vnx/filesystems/rootfs_lxc_ubuntu64</filesystem>
    <if id="1" net="Net2">
       <ipv4>10.1.2.2/24</ipv4>
       <ipv6>2001:db8:2::2/64</ipv6>
@@ -130,10 +130,10 @@ SPAIN
     <if id="9" net="virbr0">
       <ipv4>dhcp</ipv4>
     </if>
-    <route type="ipv4" gw="10.1.2.1">default</route>
-    <route type="ipv6" gw="2001:db8:2::1">default</route>
+    <route type="ipv4" gw="10.1.2.1">10.1.0.0/16</route>
+    <route type="ipv6" gw="2001:db8:2::1">2001:db8::/32</route>
     <!-- Copy the files under conf/tutorial_ubuntu/h3 to vm /var/www/html directory -->
-    <filetree seq="start-www" root="/var/www/html">conf/tutorial_ubuntu/h3/*</filetree>
+    <filetree seq="start-www" root="/var/www/html/">conf/tutorial_ubuntu/h3/*</filetree>
     <!-- Start/stop apache www server -->
     <exec seq="start-www" type="verbatim" ostype="system">
         chmod 644 /var/www/html/*
@@ -143,7 +143,7 @@ SPAIN
   </vm>
   
   <vm name="h4" type="lxc" arch="x86_64">
-    <filesystem type="cow">/usr/share/vnx/filesystems/rootfs_lxc64</filesystem>
+    <filesystem type="cow">/usr/share/vnx/filesystems/rootfs_lxc_ubuntu64</filesystem>
     <if id="1" net="Net2">
       <ipv4>10.1.2.3/24</ipv4>
       <ipv6>2001:db8:2::3/64</ipv6>
@@ -151,10 +151,10 @@ SPAIN
     <if id="9" net="virbr0">
       <ipv4>dhcp</ipv4>
     </if>
-    <route type="ipv4" gw="10.1.2.1">default</route>    
-    <route type="ipv6" gw="2001:db8:2::1">default</route>
+    <route type="ipv4" gw="10.1.2.1">10.1.0.0/16</route>    
+    <route type="ipv6" gw="2001:db8:2::1">2001:db8::/32</route>
     <!-- Copy the files under conf/tutorial_ubuntu/h4 to vm /var/www/html directory -->
-    <filetree seq="start-www" root="/var/www/html">conf/tutorial_ubuntu/h4/*</filetree>
+    <filetree seq="start-www" root="/var/www/html/">conf/tutorial_ubuntu/h4/*</filetree>
     <!-- Start/stop apache www server -->
     <exec seq="start-www" type="verbatim" ostype="system">
         chmod 644 /var/www/html/*

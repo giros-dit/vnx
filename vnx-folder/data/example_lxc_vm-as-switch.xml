@@ -37,7 +37,7 @@ SPAIN
   <net name="link3" mode="veth" type="p2p" />
   <net name="virbr0" mode="virtual_bridge" managed="no"/>
   
-  <vm name="vm1" type="lxc" exec_mode="lxc-attach">
+  <vm name="vm1" type="lxc" exec_mode="lxc-attach" arch="x86_64">
     <filesystem type="cow">/usr/share/vnx/filesystems/rootfs_lxc</filesystem>
     <shareddir root="/shared">shared</shareddir>
     <if id="1" net="link1">
@@ -48,7 +48,7 @@ SPAIN
     </if>
   </vm>
 
-  <vm name="vm2" type="lxc" exec_mode="lxc-attach">
+  <vm name="vm2" type="lxc" exec_mode="lxc-attach" arch="x86_64">
     <filesystem type="cow">/usr/share/vnx/filesystems/rootfs_lxc</filesystem>
     <shareddir root="/shared">shared</shareddir>
     <if id="1" net="link2">
@@ -59,7 +59,7 @@ SPAIN
     </if>
   </vm>
 
-  <vm name="vm3" type="lxc" exec_mode="lxc-attach">
+  <vm name="vm3" type="lxc" exec_mode="lxc-attach" arch="x86_64">
     <filesystem type="cow">/usr/share/vnx/filesystems/rootfs_lxc</filesystem>
     <shareddir root="/shared">shared</shareddir>
     <if id="1" net="link3">
@@ -70,7 +70,7 @@ SPAIN
     </if>
   </vm>
 
-  <vm name="switch" type="lxc" exec_mode="lxc-attach">
+  <vm name="switch" type="lxc" exec_mode="lxc-attach" arch="x86_64">
     <filesystem type="cow">/usr/share/vnx/filesystems/rootfs_lxc</filesystem>
     <shareddir root="/shared">shared</shareddir>
     <if id="1" net="link1"/>

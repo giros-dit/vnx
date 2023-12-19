@@ -267,7 +267,7 @@ fi
 if ! grep "^$VNX_USER:" /etc/passwd > /dev/null 2>&1
 then
    echo "creating VNX user: $VNX_USER"
-   useradd -d $DATA -g $VNX_GROUP -G $TUN_GROUP -s /bin/false $VNX_USER
+   useradd -d $DATA -g $VNX_GROUP -G $TUN_GROUP -s /bin/false -r $VNX_USER
 fi
 
 if ! [ -e $DATA ]

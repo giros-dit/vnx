@@ -333,7 +333,16 @@ e-mail: vnx@dit.upm.es
     <xs:complexType mixed="true"/>
   </xs:element>
 
-<xs:element name="connection">
+  <!-- xs:element name="mgmt_if">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="ipv4"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="ipv6"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element-->
+
+  <xs:element name="connection">
     <xs:complexType>
        <xs:sequence>
           <xs:element minOccurs="0" ref="vlan"/>  
@@ -561,6 +570,7 @@ e-mail: vnx@dit.upm.es
         <xs:element minOccurs="0" ref="shell"/>
         <xs:element minOccurs="0" ref="basedir"/>
         <xs:element minOccurs="0" ref="mng_if"/>
+        <!--xs:element minOccurs="0" ref="mgmt_if"/-->
         <xs:element maxOccurs="unbounded" minOccurs="0" ref="console"/>
         <xs:element minOccurs="0" ref="on_boot"/>
         <!--xs:element ref="display_console" minOccurs="0" /-->

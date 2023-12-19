@@ -7,7 +7,7 @@
 #             Jorge Somavilla (somavilla@dit.upm.es), Jorge Rodriguez (jrodriguez@dit.upm.es), 
 #             Carlos González (carlosgonzalez@dit.upm.es)
 # Coordinated by: David Fernández (david@dit.upm.es)
-# Copyright (C) 2005-2018 DIT-UPM
+# Copyright (C) 2005-2021 DIT-UPM
 #                         Departamento de Ingenieria de Sistemas Telematicos
 #                         Universidad Politecnica de Madrid
 #                         SPAIN
@@ -198,7 +198,7 @@ sub main {
                 'pack-add-files=s{1,}' => \@pack_add_files, 'pack-excl-files=s{1,}' => \@pack_excl_files,               
                 'f=s', 'c=s', 'T=s', 'config|C=s', 'M=s', 'i', 'g',
                 'user|u:s', '4', '6', 'D', 'no-console|n', 'intervm-delay=s', 'h2vm-timeout=s',
-                'e=s', 'w=s', 'F', 'B', 'o=s', 'Z', 'b', 'arch=s', 'vcpu=s', 'kill|k', 'video=s', 'ignore-ext'
+                'e=s', 'w=s', 'F', 'B', 'o=s', 'Z', 'b', 'arch=s', 'vcpu=s', 'kill|k', 'video=s', 'ignore-ext', 'no-virtio'
     ) or vnx_die("Incorrect usage. Type 'vnx -h' for help"); 
 
     # Get OS data from /etc/os-release
@@ -342,6 +342,13 @@ $>=0;
     if ($vmfs_on_tmp eq 'yes') {
         pre_wlog ("  VM FS on tmp=yes") if (!$opts{b});     
     }
+    $etchosts_prefix = get_conf_value ($vnxConfigFile, 'general', 'etchosts_prefix');
+    if (!defined $etchosts_prefix) { 
+    	$etchosts_prefix = ''
+    } else {
+        pre_wlog ("  HOSTS prefix: $etchosts_prefix") if (!$opts{b});     
+    }
+        
 # back_to_user()
 $>=$uid;
 
@@ -1197,7 +1204,7 @@ sub modify_ssh_config {
 			
 	if (! -e $ssh_conf_file) {
     	wlog (VVV, "ssh config file ($ssh_conf_file) NOT found", $logp);
-	    $execution->execute($logp, "echo 'Include config.d/vnx/*' > ~/.ssh/config");       
+	    $execution->execute($logp, "echo 'Include config.d/vnx/*' > $ssh_conf_file");       
 
 	} else {
     	wlog (VVV, "ssh config file ($ssh_conf_file) found", $logp);
@@ -1710,12 +1717,11 @@ sub make_vmAPI_doc {
     # aquí es donde hay que meter las ips de gestion
     # si mng_if es distinto de no, metemos un if id 0
     unless ( ($dh->get_vmmgmt_type eq 'none' ) || ($mng_if_value eq "no") ) {
-    #if ( (! $dh->get_vmmgmt_type eq 'none' ) && (! $mng_if_value eq "no" ) || 
-    #      $merged_type eq 'libvirt-kvm-android') {  # Note: in android we always create the management interface,
-                                                    # even if it is not defined. That is to conserve the if names
-                                                    # inside the virtual machine (eth0->mgmt, eth1->id=1, etc).
-                                                    # As android does not seem to include a 'udev' similar functionality,
-                                                    # that is the only way (we know) to maintain names stable...
+        # Note: in android we always create the management interface,
+        # even if it is not defined. That is to conserve the if names
+        # inside the virtual machine (eth0->mgmt, eth1->id=1, etc).
+        # As android does not seem to include a 'udev' similar functionality,
+        # that is the only way (we know) to maintain names stable...
 
         # Some virtual machine types, e.g. Dynamips, need
         # to specify the name of the mgmt interface with a tag like this:
@@ -1725,7 +1731,7 @@ sub make_vmAPI_doc {
             my $id = $if->getAttribute("id");
             #print "**** If id=$id\n";
             
-            if ($id == 0) { 
+            if ($id == 0 && ($merged_type eq 'dynamips')) { 
                 $mgmtIfName = $if->getAttribute("name");
                 #print "**** mgmtIfName=$mgmtIfName\n";
                 my $net = $if->getAttribute("net");
@@ -1757,28 +1763,14 @@ sub make_vmAPI_doc {
             $mng_if_tag->addChild( $dom->createAttribute( name => $mgmtIfName));
         }
  
- #       if ($merged_type eq 'libvirt-kvm-android') {
- #           $mng_if_tag->addChild( $dom->createAttribute( id => 1));
- #       } else {
-            $mng_if_tag->addChild( $dom->createAttribute( id => 0));
- #       }
-        if ( ($dh->get_vmmgmt_type eq 'private') || 
-             ( ($dh->get_vmmgmt_type eq 'net') && ( str($dh->get_doc->getElementsByTagName("mgmt_net")->item(0)->getAttribute("config")) eq 'manual') ) ) {
-	        my %mng_addr = get_admin_address( $mngt_ip_data, $vm_name, $dh->get_vmmgmt_type );
-
-	        my $ipv4_tag = $dom->createElement('ipv4');
-	        $mng_if_tag->addChild($ipv4_tag);
-	        my $mng_mask = $mng_addr{'vm'}->mask();
-	        $ipv4_tag->addChild( $dom->createAttribute( mask => $mng_mask));
-	        my $mng_ip = $mng_addr{'vm'}->addr();
-	        $ipv4_tag->addChild($dom->createTextNode($mng_ip));
-        } else { 
-        	# mgmt interfaces of type 'net' and autoconfigured with dhcp
-            my $ipv4_tag = $dom->createElement('ipv4');
-            $mng_if_tag->addChild($ipv4_tag);
-            $ipv4_tag->addChild($dom->createTextNode('dhcp'));
-        }
-      
+        $mng_if_tag->addChild( $dom->createAttribute( id => 0));
+        my %mng_addr = get_admin_address( $mngt_ip_data, $vm_name, $dh->get_vmmgmt_type );
+        my $ipv4_tag = $dom->createElement('ipv4');
+        $mng_if_tag->addChild($ipv4_tag);
+        my $mng_mask = $mng_addr{'vm'}->mask();
+        $ipv4_tag->addChild( $dom->createAttribute( mask => $mng_mask));
+        my $mng_ip = $mng_addr{'vm'}->addr();
+        $ipv4_tag->addChild($dom->createTextNode($mng_ip));
     }
    
     # To process all interfaces
@@ -2110,15 +2102,19 @@ sub make_vmAPI_doc {
 			} else {
 			    $key_file =~ s#~/#/root/#;
 			}
-            $key_file = abs_path($key_file);
-            #my $key_file = abs_path(do_path_expansion( text_tag( $ssh_key ) ));
-            wlog (V, "<ssh_key> file: $key_file");
-            $execution->execute( $logp, $bd->get_binaries_path_ref->{"cat"}
-                                 . " $key_file >>" . $ssh_key_dir . "/ssh_keys" );
-            # Add the original <ssh> tags to VM xml
-            my $new_ssh_key = $ssh_key->cloneNode;
-            $new_ssh_key->appendTextNode($key_file);
-            $vm_tag->addChild($new_ssh_key);
+            my $key_file2 = abs_path($key_file);
+            if ( defined($key_file2) ) {
+                #my $key_file = abs_path(do_path_expansion( text_tag( $ssh_key ) ));
+                wlog (V, "<ssh_key> file: $key_file2");
+                $execution->execute( $logp, $bd->get_binaries_path_ref->{"cat"}
+                                     . " $key_file2 >>" . $ssh_key_dir . "/ssh_keys" );
+                # Add the original <ssh> tags to VM xml
+                my $new_ssh_key = $ssh_key->cloneNode;
+                $new_ssh_key->appendTextNode($key_file2);
+                $vm_tag->addChild($new_ssh_key);
+    	    } else {
+	            wlog (N, "WARNING: $key_file does not exist!\n");
+            }
         }
         
         # Add a <filetree> to copy ssh keys
@@ -3932,6 +3928,11 @@ sub mode_cleanhost {
 
     my $vnx_dir = shift;
     
+    # get hypervisor from config file
+    $hypervisor = get_conf_value ($vnxConfigFile, 'libvirt', 'hypervisor', 'root');
+    if (!defined $hypervisor) { $hypervisor = $LIBVIRT_DEFAULT_HYPERVISOR };
+    wlog (VVV, "[libvirt] conf: hypervisor=$hypervisor");
+
     # Clean host
     wlog (N, "\nVNX clean-host mode:");     
     
@@ -3940,6 +3941,7 @@ sub mode_cleanhost {
     wlog (N, "-------------------------------------------------------------------");
     wlog (N, "---- This command will:");
     wlog (N, "----   - destroy all virtual machines in this host (UML, libvirt and dynamips)");
+    wlog (N, "----   - destroy all LXC containers in this host created by VNX");
     wlog (N, "----   - delete .vnx directory content");
     wlog (N, "----   - restart libvirt daemon");
     wlog (N, "----   - restart dynamips daemon");
@@ -4010,14 +4012,56 @@ change_to_root();
             wlog (N, $res);       
         }
             
+
+        wlog (N, "----   Killing ALL LXC containers started by VNX...");
+        my $lxc_dir = "/var/lib/lxc/";
+
+        opendir my $dh, $lxc_dir or die;
+        for my $cont (readdir $dh) {
+            next if $cont eq '.' or $cont eq '..';
+            my $target = readlink "$lxc_dir/$cont";
+            if ($target && index($target, $vnx_dir) == 0) {
+
+                # Check if the container is running and stop it
+                my $state=`lxc-info $cont | grep State | awk '{print \$2}'`; chomp($state);
+                #print "state: $state\n";
+                if ( $state eq "RUNNING" ) {
+                    wlog (N, "----   $cont is in state $state. Stopping it...");
+                    system ("lxc-stop $cont");
+                }
+                # Check if the directory is mounted
+                my $mounted = system ("mountpoint -q -- $target");
+                if (! $mounted) {
+                    wlog (N, "----   Directory $target still mounted. Unmounting...");
+                    $res=`umount $target`;
+                    wlog (N, $res);       
+                }
+                $res=`rm -v /var/lib/lxc/$cont`;
+                wlog (N, $res);       
+            }
+        }
+
         wlog (N, "----   Restarting libvirt daemon...");  
-        $res = `/etc/init.d/libvirt-bin restart`;
+        $res = ` service libvirt-bin restart`;
         wlog (N, $res);       
 
+        if ( -e '/etc/init.d/dynamips' ) {
         wlog (N, "----   Restarting dynamips daemon...");  
         $res = `/etc/init.d/dynamips restart`;
         wlog (N, $res);       
+        }
 
+        #
+        # Clean vnxdir directory
+        #
+        # Check if any directory inside $vnx_dir is mounted
+        my $vnxmounts=`cat /proc/mounts | grep "$vnx_dir" | cut -f2 -d" "`;
+        my @vnxmounts = split "\n", $vnxmounts;
+        foreach my $m ( @vnxmounts ) {
+            wlog (N, "----   Directory $m still mounted. Unmounting...");
+            $res=`umount $m`;
+            wlog (N, $res);       
+        }
         wlog (N, "----   Deleting .vnx directory...");
         if (defined($vnx_dir)) {
             $res = `rm -rf $vnx_dir/../.vnx/*`;
@@ -4189,7 +4233,7 @@ back_to_user();
     my $virtio = get_conf_value ($vnxConfigFile, 'libvirt', 'virtio', 'root');
     if (!defined $virtio) { $virtio = $DEFAULT_VIRTIO };
     wlog (VVV, "virtio=$virtio");
-    if ($virtio eq 'yes') {
+    if ( ($virtio eq 'yes') && ! defined($opts{'no-virtio'}) ){
         $disk_a = 'vda';
         $disk_b = 'hdb';
     } else {
@@ -4369,7 +4413,7 @@ back_to_user();
 
 			my $lxc_format;
 
-        	if ( $lxc_vers =~ /^2\.1/ or $lxc_vers =~ /^3\./) {
+			if ( $lxc_vers =~ /^2\.1/ or $lxc_vers =~ /^3\./ or $lxc_vers =~ /^4\./ or $lxc_vers =~ /^5\./) {
         		$lxc_format = 'new';
 				if ( $lxc_configfile_vers eq 'old' ) {
         			wlog (V, "LXC config file in old format. Converting to new format.", $logp);
@@ -4485,13 +4529,18 @@ back_to_user();
 
         pre_wlog ("...$container_id");
                 
-        $res = $execution->execute( $logp, "lxc-start -F -n $container_id -f $rootfs/$lxc_config_file -P " . abs_path("$rootfs/..") );
-        #my $res = $execution->execute( $logp, "lxc-start -F -n vnx-$id -f $rootfs/$lxc_config_file");
-        if ($res) { 
-            wlog (N, "$res", $logp)
-        }
+        pre_wlog ("Starting container: lxc-start -F -n $container_id -f $rootfs/$lxc_config_file -P " . abs_path("$rootfs/..") );
+                
+change_to_root();
+        system "lxc-start -F -n $container_id -f $rootfs/$lxc_config_file -P " . abs_path("$rootfs/..");
+        #$res = $execution->execute( $logp, "lxc-start -F -n $container_id -f $rootfs/$lxc_config_file -P " . abs_path("$rootfs/..") );
+        #if ($res) { 
+        #    wlog (N, "$res", $logp)
+        #}
 		# Rename bak the config file
-        $execution->execute( $logp, "mv $rootfs/config.bak $rootfs/config" );
+        #$execution->execute( $logp, "mv $rootfs/config.bak $rootfs/config" );
+        system "mv $rootfs/config.bak $rootfs/config";
+back_to_user();
             
     } elsif ( $rootfs_type eq 'libvirt-kvm' ) {
 
@@ -4501,14 +4550,14 @@ back_to_user();
         my $virtio = get_conf_value ($vnxConfigFile, 'libvirt', 'virtio', 'root');
         if (!defined $virtio) { $virtio = $DEFAULT_VIRTIO };
         wlog (VVV, "virtio=$virtio");
-        if ($virtio eq 'yes') {
+        if ( ($virtio eq 'yes') && ! defined($opts{'no-virtio'}) ){
             $disk_a = 'vda';
             $disk_b = 'vdb';
         } else {
             $disk_a = 'hda';
             $disk_b = 'hdb';        
         }
-
+        wlog (VVV, "disk_a=$disk_a");
 	    # Create a temp directory to store everything
 	    my $base_dir = `mktemp --tmpdir=$tmp_dir -td vnx_modify_rootfs.XXXXXX`;
 	    chomp ($base_dir);
@@ -4972,14 +5021,19 @@ sub mode_pack {
         
         my @rootfs_list = split /\n/, $rootfs_set;
         foreach my $rootfs (@rootfs_list) {
-            wlog (N, "--     $rootfs", '');
-            print "$rootfs\n";
+            #wlog (N, "--     $rootfs", '');
+            #print "$rootfs\n";
             my $excluded ='no';
             foreach my $excl_file (@pack_excl_files) {
-            	if ($excl_file eq $rootfs) { $excluded = 'yes' }
+            	if ($excl_file eq basename($rootfs)) { 
+                    $excluded = 'yes';
+                    wlog (N, "--     ** excluded: $rootfs", '');
+                    next;
+                }
             }
      		if ($excluded eq 'no') {
 	        	$content="$content $scen_bdir/filesystems/$rootfs";
+                wlog (N, "--     $rootfs", '');
      		}
         }
     
@@ -4988,12 +5042,15 @@ sub mode_pack {
             system ( "find $scen_bdir/filesystems/$rootfs -type s >> $tmpfile" );
         }
         $tar_opts="-X $tmpfile";
-        wlog (N, "--   Scenario excluded content:", '');
+        unless (-z "$tmpfile") {
+            wlog (N, "--   Rootfs excluded content:", '');
         my $excl_content=`cat $tmpfile`;
+            wlog (N, $excl_content, '');
         open (EXC, "<$tmpfile") or die "Could not open file '$tmpfile' $!";
         while (<EXC>) { chomp; wlog (N, "--     $_", ''); } 
         close (EXC);
         wlog (N, "$excl_content", '');
+        }
     } else {
         wlog (N, "--   rootfs not packaged (use option -r if you want to include it).", '');
     }
@@ -5020,6 +5077,8 @@ sub mode_pack {
     $tar_opts .= " --transform 's|^${scen_bdir}/|${pack_tgz_name}/|'";
     #}
     
+    wlog (N, "--", '');
+    wlog (N, "-- Creating ${pack_tgz_name}.tgz...", '');
     #print   "LANG=C tar -cpf - $content $tar_opts | pv -p -s ${size} | gzip > ${cdir}/${pack_tgz_name}.tgz\n";
     #system ("LANG=C tar -cpf - $content $tar_opts | pv -p -s ${size} | gzip > ${cdir}/${pack_tgz_name}.tgz");
     print   "LANG=C tar --numeric-owner -cpf - $content $tar_opts | pv -p  | gzip > ${cdir}/${pack_tgz_name}.tgz\n";
@@ -5486,7 +5545,7 @@ sub create_bridges_for_virtual_bridged_networks  {
                 my ($vms,$ifs) = $dh->get_vms_in_a_net ($net_name);
                 my $vm1 = $dh->get_vm_name (@$vms[0]);
                 my $vm2 = $dh->get_vm_name (@$vms[1]);
-                $execution->execute_root($logp, $bd->get_binaries_path_ref->{"ip"} . " link add ${net_name}_${vm1} type veth peer name ${net_name}_${vm2}");
+                $execution->execute_root($logp, $bd->get_binaries_path_ref->{"ip"} . " link add ${net_name}_${vm1} type veth peer name ${net_name}_${vm2}"); ## kk
                                 
             }
                  
@@ -6820,7 +6879,7 @@ sub bridges_destroy {
 
     	wlog (VVV, "net=$net_name, mode=$mode, managed='" . $managed . "'", $logp);
     	
-        if ( !($managed eq 'no') && ($mode ne "uml_switch") ) {
+        if ( !($managed eq 'no') && ($mode ne "uml_switch") && ($mode ne "veth") ) {
         	
         	# Destroy inter-switch connections defined in scenario
             foreach my $net2 ($doc->getElementsByTagName("net")) {
@@ -6876,6 +6935,12 @@ sub bridges_destroy {
                     $execution->execute_root($logp, $bd->get_binaries_path_ref->{"ovs-vsctl"} . " del-br $net_name");
                 }
             }
+        } elsif ( !($managed eq 'no') && ($mode eq "veth") ) {
+            my ($vms,$ifs) = $dh->get_vms_in_a_net ($net_name);
+            my $vm1 = $dh->get_vm_name (@$vms[0]);
+            my $vm2 = $dh->get_vm_name (@$vms[1]);
+            wlog (V, "Deleting veth link: ${net_name}_${vm1}, mode=$mode", $logp); # kk
+		    $execution->execute_root($logp, $bd->get_binaries_path_ref->{"ip"} . " link del ${net_name}_${vm1}");
         }
     }
 }

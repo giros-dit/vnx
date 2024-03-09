@@ -8,4 +8,8 @@ VNX_MAJOR="2"
 VNX_MINOR="0b"
 
 # Automatically self updated (do not edit):
+<<<<<<< HEAD
 VNX_LATEST_REVISION="6811"
+=======
+VNX_LATEST_REVISION="6805"
+>>>>>>> 8ed31c72f36950558589583c2e39ce3bd7245849

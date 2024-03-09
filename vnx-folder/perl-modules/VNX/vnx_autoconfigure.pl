@@ -493,7 +493,9 @@ sub autoconfigure_debian_ubuntu {
     }
     system "echo \"\" > $rules_file";
     open RULES, ">" . $rules_file or return "error opening $rules_file";
-    system "cp $interfaces_file $interfaces_file.backup";
+    if (-e $interfaces_file) {
+        system "cp $interfaces_file $interfaces_file.backup";
+    }
     system "echo \"\" > $interfaces_file";
     open INTERFACES, ">" . $interfaces_file or return "error opening $interfaces_file";
 

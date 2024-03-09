@@ -6939,8 +6939,14 @@ sub bridges_destroy {
             my ($vms,$ifs) = $dh->get_vms_in_a_net ($net_name);
             my $vm1 = $dh->get_vm_name (@$vms[0]);
             my $vm2 = $dh->get_vm_name (@$vms[1]);
-            wlog (V, "Deleting veth link: ${net_name}_${vm1}, mode=$mode", $logp); # kk
-		    $execution->execute_root($logp, $bd->get_binaries_path_ref->{"ip"} . " link del ${net_name}_${vm1}");
+            if ( -e "/sys/class/net/${net_name}_${vm1}" ) { 
+                wlog (V, "Deleting veth link: ${net_name}_${vm1}, mode=$mode", $logp);
+                $execution->execute_root($logp, $bd->get_binaries_path_ref->{"ip"} . " link del ${net_name}_${vm1}");
+            }
+            if ( -e "/sys/class/net/${net_name}_${vm2}" ) { 
+                wlog (V, "Deleting veth link: ${net_name}_${vm2}, mode=$mode", $logp); 
+                $execution->execute_root($logp, $bd->get_binaries_path_ref->{"ip"} . " link del ${net_name}_${vm2}");
+            }
         }
     }
 }

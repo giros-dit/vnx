@@ -4027,7 +4027,7 @@ change_to_root();
                 #print "state: $state\n";
                 if ( $state eq "RUNNING" ) {
                     wlog (N, "----   $cont is in state $state. Stopping it...");
-                    system ("lxc-stop $cont");
+                    system ("lxc-stop -k $cont");
                 }
                 # Check if the directory is mounted
                 my $mounted = system ("mountpoint -q -- $target");

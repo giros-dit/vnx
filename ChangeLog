@@ -1,3 +1,10 @@
+
+3/4/25
+- Restated the lxc-default-with-netns profile with modifications (deny lines eliminated). With that modification works on new Ubuntu releases.
+
+25/9/24
+- Eliminated lxc-default-with-netns profile as it does not work in new ubuntu releases
+
 19/12/23
 
 - CheckSemantics: added a check for the net in a connection tag to exist

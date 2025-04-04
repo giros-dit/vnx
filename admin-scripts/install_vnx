@@ -60,6 +60,7 @@ mkdir -p $VERBOSE ${VNX_LIBS}
 mkdir -p $VERBOSE  ${EDIV_LIBS}
 mkdir -p $VERBOSE ${EDIV_ALG_MODULES_DIR}
 mkdir -p $VERBOSE /usr/share/xml/vnx
+mkdir -p $VERBOSE /usr/local/share/xml/vnx
 mkdir -p $VERBOSE ${VNX_DIR}/bin
 mkdir -p $VERBOSE ${VNX_DIR}/examples/
 mkdir -p $VERBOSE ${VNX_DIR}/filesystems
@@ -150,6 +151,7 @@ chmod 644 ${VNX_LIBS}*
 #
 #cp $VERBOSE data/*.dtd /usr/share/xml/vnx/
 cp $VERBOSE data/*.xsd /usr/share/xml/vnx/
+cp $VERBOSE data/*.xsd /usr/local/share/xml/vnx/
 
 #
 # Copy examples
@@ -217,6 +219,7 @@ chmod 600 ${VNX_DIR}/etc/vnx.cluster.conf.sample
 # Copy AppArmor profile
 #
 cp $VERBOSE etc/lxc-default-with-netns /etc/apparmor.d/lxc
+#rm $VERBOSE /etc/apparmor.d/lxc/lxc-default-with-netns 
 
 #
 # Copy ace daemons 

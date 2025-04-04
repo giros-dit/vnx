@@ -7,7 +7,7 @@
 #             Jorge Somavilla (somavilla@dit.upm.es), Jorge Rodriguez (jrodriguez@dit.upm.es), 
 #             Carlos González (carlosgonzalez@dit.upm.es)
 # Coordinated by: David Fernández (david@dit.upm.es)
-# Copyright (C) 2005-2021 DIT-UPM
+# Copyright (C) 2005-2024 DIT-UPM
 #                         Departamento de Ingenieria de Sistemas Telematicos
 #                         Universidad Politecnica de Madrid
 #                         SPAIN
@@ -243,6 +243,10 @@ sub main {
     $uid_orig = $uid;
     $uid_name_orig = $uid_name;
 
+#$>=$user_id;
+    system('xhost +SI:localuser:root');
+#$>=0;
+
     # Check if we have root priviledges. Exit if not
     unless ($opts{'version'} or $opts{'help'} or ($#ARGV == -1)) {
 	    if ($> ne 0) {
@@ -293,6 +297,7 @@ sub main {
         #print "  OS_ID=" . $os_id . "\n";
         #print "  OS_VID=" . $os_ver_id . "\n";
         print $uid_msg; 
+        print ("  xhost +SI:localuser:root executed \n");     
     }
 
    	# Set configuration file 
@@ -2687,7 +2692,7 @@ change_to_root();
             # If Network manager is running, we have to release the management interface from being managed by NM. 
             # If not, the managemente IP address assigned dissapears after some seconds (why?)  
             unless ( ! $nm_running  or 
-                     ($os_id eq 'fedora' or $os_id eq 'centos' or $os_id eq 'kali') or 
+                     ($os_id eq 'debian' or $os_id eq 'fedora' or $os_id eq 'centos' or $os_id eq 'kali') or 
                      ($os_id eq 'ubuntu' and $os_ver_id gt "14.04" )) {
             	my $if_name = ${vm_name} . "-e0";
             	my $mac_addr = get_mac_by_ifname("$if_name");
@@ -2746,7 +2751,7 @@ change_to_root();
 
             # Prevent Network manager (if running) from managing VM interfaces
             unless ( ! $nm_running  or 
-                     ($os_id eq 'fedora' or $os_id eq 'centos' or $os_id eq 'kali') or 
+                     ($os_id eq 'debian' or $os_id eq 'fedora' or $os_id eq 'centos' or $os_id eq 'kali') or 
                      ($os_id eq 'ubuntu' and $os_ver_id gt "14.04" )) {
             	my $if_name = ${vm_name} . "-e${id}";
             	my $mac_addr = get_mac_by_ifname("$if_name");

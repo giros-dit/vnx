@@ -158,6 +158,11 @@ sub init {
     if ( ($nested_lxc eq 'yes') && ($aa_unconfined eq 'yes') ){
         return "in $vnxConfigFile, cannot activate 'nested_lxc=yes' and 'aa_unconfined=yes' simultaneously. Only one of the two parameters can be set to yes.";
     }
+    # nested_lxc option does not work as the apparmor profilo does not load in new linux versions. Disabled by now
+    #if ( ($nested_lxc eq 'yes') ){
+    #    wlog (N, "  WARNING: nested_lxc=yes option in /etc/vnx.conf does not work in recent linux versions. Disabled");
+    #    $nested_lxc = 'no'; # default value
+    #}
     wlog (VVV, "[lxc] conf: nested_lxc=$nested_lxc");
 
     $overlayfs_workdir_option = get_conf_value ($vnxConfigFile, 'lxc', 'overlayfs_workdir_option', 'root');
@@ -212,7 +217,15 @@ sub define_vm {
     my $exec_mode   = $dh->get_vm_exec_mode($vm);
     my $vm_arch = $vm->getAttribute("arch");
     if (empty($vm_arch)) { $vm_arch = 'i686' }  # default value
-    
+
+    # Get cgroups version
+    my $cgr_vers = "cgroup";
+    my $exit_code=system("mount | grep ^cgroup2 > /dev/null 2>&1");
+    if($exit_code==0) {
+        $cgr_vers = "cgroup2";
+    }
+    wlog (V, "Cgroup version: $cgr_vers", $logp);
+
     #
     # define_vm for lxc
     #
@@ -402,7 +415,8 @@ back_to_user();
 
 		my $lxc_format;
 
-        if ( $lxc_vers =~ /^2\.1/ or $lxc_vers =~ /^3\./ or $lxc_vers =~ /^4\./ or $lxc_vers =~ /^5\./ ) {
+        if ( $lxc_vers =~ /^2\.1/ or $lxc_vers =~ /^3\./ or $lxc_vers =~ /^4\./ or
+             $lxc_vers =~ /^5\./ or $lxc_vers =~ /^6\./ ) {
         	$lxc_format = 'new';
 			if ( $lxc_configfile_vers eq 'old' ) {
         		wlog (V, "LXC config file in old format. Converting to new format.", $logp);
@@ -471,14 +485,14 @@ back_to_user();
 	        # Configure CPU related attributes
 	        my $vcpu = $vm->getAttribute("vcpu");
 	        if (defined($vcpu) and $vcpu ne '') {
-	            $execution->execute( $logp, "lxc.cgroup.cpuset.cpus = $vcpu", *CONFIG_FILE );
+	            $execution->execute( $logp, "lxc.$cgr_vers.cpuset.cpus = $vcpu", *CONFIG_FILE );
 	        }        
 	        my $vcpu_quota = $vm->getAttribute("vcpu_quota");
 	        if (defined($vcpu_quota)) {
 	        	my $PERIOD = 50000;
 	        	$vcpu_quota =~ s/%//;
-	            $execution->execute( $logp, "lxc.cgroup.cpu.cfs_quota_us = " . int($PERIOD*$vcpu_quota/100), *CONFIG_FILE );
-	            $execution->execute( $logp, "lxc.cgroup.cpu.cfs_period_us = $PERIOD", *CONFIG_FILE );
+	            $execution->execute( $logp, "lxc.$cgr_vers.cpu.cfs_quota_us = " . int($PERIOD*$vcpu_quota/100), *CONFIG_FILE );
+	            $execution->execute( $logp, "lxc.$cgr_vers.cpu.cfs_period_us = $PERIOD", *CONFIG_FILE );
 	        }        
 	        
 	        # Configure Memory
@@ -486,7 +500,7 @@ back_to_user();
 	            my $mem = $vm->findnodes("/create_conf/vm/mem")->[0]->getFirstChild->getData;
 	            $mem = $mem/1024;
 	            $execution->execute( $logp, "memory.limit_in_bytes = ${mem}M", *CONFIG_FILE );
-	            # Ex: lxc.cgroup.memory.limit_in_bytes = 256M        
+	            # Ex: lxc.$cgr_vers.memory.limit_in_bytes = 256M        
 	        }        
 	        
 	        #
@@ -572,18 +586,18 @@ back_to_user();
 		        $execution->execute( $logp, "", *CONFIG_FILE );
 		        $execution->execute( $logp, "# Set unconfined to avoid problems with apparmor", *CONFIG_FILE );
 		        $execution->execute( $logp, "lxc.apparmor.profile =unconfined", *CONFIG_FILE );
-	            $execution->execute( $logp, "lxc.cgroup.devices.allow = b 7:* rwm", *CONFIG_FILE );
-	            $execution->execute( $logp, "lxc.cgroup.devices.allow = c 10:237 rwm", *CONFIG_FILE );
+	            $execution->execute( $logp, "lxc.$cgr_vers.devices.allow = b 7:* rwm", *CONFIG_FILE );
+	            $execution->execute( $logp, "lxc.$cgr_vers.devices.allow = c 10:237 rwm", *CONFIG_FILE );
 	        }
 	        
 	        if ($nested_lxc eq 'yes') {
-		        $execution->execute( $logp, "lxc.mount.auto = cgroup", *CONFIG_FILE );        
+		        $execution->execute( $logp, "lxc.mount.auto = $cgr_vers", *CONFIG_FILE );        
 		        #$execution->execute( $logp, "lxc.aa_profile=lxc-container-default-with-nesting", *CONFIG_FILE );        
 		        $execution->execute( $logp, "lxc.apparmor.profile=lxc-container-default-with-netns", *CONFIG_FILE );        
 	        }
 	
 			# Allow access to /dev/net/tun
-            $execution->execute( $logp, "lxc.cgroup.devices.allow = c 10:200 rwm", *CONFIG_FILE );		
+            $execution->execute( $logp, "lxc.$cgr_vers.devices.allow = c 10:200 rwm", *CONFIG_FILE );		
 	
 	        close CONFIG_FILE unless ( $execution->get_exe_mode() eq $EXE_DEBUG );
 
@@ -639,14 +653,14 @@ back_to_user();
 	        # Configure CPU related attributes
 	        my $vcpu = $vm->getAttribute("vcpu");
 	        if (defined($vcpu) and $vcpu ne '') {
-	            $execution->execute( $logp, "lxc.cgroup.cpuset.cpus = $vcpu", *CONFIG_FILE );
+	            $execution->execute( $logp, "lxc.$cgr_vers.cpuset.cpus = $vcpu", *CONFIG_FILE );
 	        }        
 	        my $vcpu_quota = $vm->getAttribute("vcpu_quota");
 	        if (defined($vcpu_quota)) {
 	        	my $PERIOD = 50000;
 	        	$vcpu_quota =~ s/%//;
-	            $execution->execute( $logp, "lxc.cgroup.cpu.cfs_quota_us = " . int($PERIOD*$vcpu_quota/100), *CONFIG_FILE );
-	            $execution->execute( $logp, "lxc.cgroup.cpu.cfs_period_us = $PERIOD", *CONFIG_FILE );
+	            $execution->execute( $logp, "lxc.$cgr_vers.cpu.cfs_quota_us = " . int($PERIOD*$vcpu_quota/100), *CONFIG_FILE );
+	            $execution->execute( $logp, "lxc.$cgr_vers.cpu.cfs_period_us = $PERIOD", *CONFIG_FILE );
 	        }        
 	        
 	        # Configure Memory
@@ -654,7 +668,7 @@ back_to_user();
 	            my $mem = $vm->findnodes("/create_conf/vm/mem")->[0]->getFirstChild->getData;
 	            $mem = $mem/1024;
 	            $execution->execute( $logp, "memory.limit_in_bytes = ${mem}M", *CONFIG_FILE );
-	            # Ex: lxc.cgroup.memory.limit_in_bytes = 256M        
+	            # Ex: lxc.$cgr_vers.memory.limit_in_bytes = 256M        
 	        }        
 	        
 	        #
@@ -740,23 +754,30 @@ back_to_user();
 		        $execution->execute( $logp, "", *CONFIG_FILE );
 		        $execution->execute( $logp, "# Set unconfined to avoid problems with apparmor", *CONFIG_FILE );
 		        $execution->execute( $logp, "lxc.aa_profile=unconfined", *CONFIG_FILE );
-	            $execution->execute( $logp, "lxc.cgroup.devices.allow = b 7:* rwm", *CONFIG_FILE );
-	            $execution->execute( $logp, "lxc.cgroup.devices.allow = c 10:237 rwm", *CONFIG_FILE );
+	            $execution->execute( $logp, "lxc.$cgr_vers.devices.allow = b 7:* rwm", *CONFIG_FILE );
+	            $execution->execute( $logp, "lxc.$cgr_vers.devices.allow = c 10:237 rwm", *CONFIG_FILE );
 	        }
 	        
 	        if ($nested_lxc eq 'yes') {
-		        $execution->execute( $logp, "lxc.mount.auto = cgroup", *CONFIG_FILE );        
+		        $execution->execute( $logp, "lxc.mount.auto = $cgr_vers", *CONFIG_FILE );        
 		        #$execution->execute( $logp, "lxc.aa_profile=lxc-container-default-with-nesting", *CONFIG_FILE );        
 		        $execution->execute( $logp, "lxc.aa_profile=lxc-container-default-with-netns", *CONFIG_FILE );        
 	        }
 			
 			# Allow access to /dev/net/tun	
-            $execution->execute( $logp, "lxc.cgroup.devices.allow = c 10:200 rwm", *CONFIG_FILE );		
+            $execution->execute( $logp, "lxc.$cgr_vers.devices.allow = c 10:200 rwm", *CONFIG_FILE );		
 
 	        close CONFIG_FILE unless ( $execution->get_exe_mode() eq $EXE_DEBUG );
 
 			# End of old format configuration
 		}
+
+        # Check that cgroup tags in config file all agree with the version used 
+        if ( $cgr_vers eq 'cgroup2' ){
+            system "sed -i 's/\\\.cgroup\\\./.cgroup2./' $vm_lxc_config" 
+        } else {
+            system "sed -i 's/\\\.cgroup2\\\./.cgroup./' $vm_lxc_config" 
+        }
 
         # Call the VM autoconfiguration function
         if ($platform[0] eq 'Linux'){

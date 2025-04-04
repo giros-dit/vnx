@@ -13,7 +13,7 @@ profile lxc-container-default-with-netns flags=(attach_disconnected,mediate_dele
   # - onetime mount, if /run/netns was not mounted yet:
   #   strace: mount("", "/var/run/netns", "none", MS_REC|MS_SHARED, NULL) = 0
   # fwiw fstype=none doesn't match, protect by denying mount with /dev argument
-  deny mount options=(rw, make-rshared) /** -> /run/netns/,
+  #deny mount options=(rw, make-rshared) /** -> /run/netns/,
   mount options=(rw, make-rshared) -> /run/netns/,
   #   strace: mount("/var/run/netns", "/var/run/netns", 0x43981d, MS_BIND, NULL) = 0
   mount options=(rw, rshared,bind) /run/netns/ -> /run/netns/,
@@ -27,7 +27,7 @@ profile lxc-container-default-with-netns flags=(attach_disconnected,mediate_dele
   # - used by: ip netns exec foo ...: 
   #   strace: mount("", "/", "none", MS_REC|MS_SLAVE, NULL) = 0
   # fwiw fstype=none doesn't match, protect by denying mount with /dev argument
-  deny mount options=(rw, make-rslave) /** -> /,
+  #deny mount options=(rw, make-rslave) /** -> /,
   mount options=(rw, make-rslave) -> /,
 
   # Lines taken from lxc-default-with-nesting profile

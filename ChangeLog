@@ -1,6 +1,7 @@
 
 3/4/25
 - Restated the lxc-default-with-netns profile with modifications (deny lines eliminated). With that modification works on new Ubuntu releases.
+- Updated vnx_update to correct an error that prevented the instalation of old versions with -v option.
 
 25/9/24
 - Eliminated lxc-default-with-netns profile as it does not work in new ubuntu releases

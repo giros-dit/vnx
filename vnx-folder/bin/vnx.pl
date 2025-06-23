@@ -1850,15 +1850,15 @@ sub make_vmAPI_doc {
 			# Check if interface specific qos values have been definied 			
 			my $if_bw = $if->getAttribute("bw");
             unless (empty($if_bw)) {
-            	 $bw = $if_bw;  # override <net> bw value if exists
+            	$bw = $if_bw;  # override <net> bw value if exists
             }
 			my $if_delay = $if->getAttribute("delay");
             unless (empty($if_delay)) {
-            	 $delay = $if_delay;  # override <net> delay value if exists
+            	$delay = $if_delay;  # override <net> delay value if exists
             }
 			my $if_loss = $if->getAttribute("loss");
             unless (empty($if_loss)) {
-            	 $loss = $if_loss;  # override <net> loss value if exists
+            	$loss = $if_loss;  # override <net> loss value if exists
             }
 
 			#print "**** 2 - net=" . $ net . ", bw=" . $bw .", delay=" . $delay . ", loss=" . $loss . "\n";
@@ -1873,7 +1873,13 @@ sub make_vmAPI_doc {
             unless (empty($loss)) { 
                 $if_tag->addChild( $dom->createAttribute( loss => $loss)) 
             } 
-             
+
+            # Add dscp attribute if specified
+            my $if_dscp = $if->getAttribute("dscp");
+            unless (empty($if_dscp)) {
+                $if_tag->addChild( $dom->createAttribute( dscp => $if_dscp)) 
+            } 
+
             # To process interface IPv4 addresses
             # The first address has to be assigned without "add" to avoid creating subinterfaces
             if ($dh->is_ipv4_enabled) {

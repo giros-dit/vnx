@@ -1,3 +1,5 @@
+23/6/25
+- Added support for dscp attribute in <if> tags.
 
 3/4/25
 - Restated the lxc-default-with-netns profile with modifications (deny lines eliminated). With that modification works on new Ubuntu releases.

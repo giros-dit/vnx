@@ -38,6 +38,10 @@ e-mail: vnx@dit.upm.es
     <xs:complexType mixed="true"/>
   </xs:element>
 
+    <xs:element name="dscp">
+    <xs:complexType mixed="true"/>
+  </xs:element>
+
   <xs:element name="loss">
     <xs:complexType mixed="true"/>
   </xs:element>
@@ -249,7 +253,8 @@ e-mail: vnx@dit.upm.es
       <xs:attribute name="bw" type="xs:string" use="optional"/>
       <xs:attribute name="delay" type="xs:string" use="optional"/>
       <xs:attribute name="loss" type="xs:string" use="optional"/>
-
+      <xs:attribute name="dscp" type="xs:string" use="optional"/>
+      
       <xs:attribute name="name" type="xs:string"/>
     </xs:complexType>
   </xs:element>
@@ -430,6 +435,7 @@ e-mail: vnx@dit.upm.es
       <xs:attribute name="bw" type="xs:string" use="optional"/>
       <xs:attribute name="delay" type="xs:string" use="optional"/>
       <xs:attribute name="loss" type="xs:string" use="optional"/>
+      <xs:attribute name="dscp" type="xs:string" use="optional"/>
 
     </xs:complexType>
   </xs:element>
@@ -669,3 +675,5 @@ e-mail: vnx@dit.upm.es
   </xs:element-->
 
 </xs:schema>
+
+

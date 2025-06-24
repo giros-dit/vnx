@@ -1,3 +1,8 @@
+24/6/25
+- Changed the way nested LXC is managed. The profile lxc-default-with-netns is not needed anymore. To enable nested containers in LXC, now the following lines are added to the config file:
+    lxc.apparmor.profile = generated
+    lxc.apparmor.allow_nesting = 1
+
 23/6/25
 - Added support for dscp attribute in <if> tags.
 

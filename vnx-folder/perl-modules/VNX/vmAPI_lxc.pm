@@ -429,9 +429,9 @@ back_to_user();
 		        my $res = $execution->execute( $logp, "vnx_convert_lxc_config -q -o $vm_lxc_config" );
 			}
         }
-        if ( $lxc_vers =~ /^3\./ or $lxc_vers =~ /^4\./ or $lxc_vers =~ /^5\./) {
+	if ( $lxc_vers =~ /^3\./ or $lxc_vers =~ /^4\./ or $lxc_vers =~ /^5\./) {
 			system ("sed -i -e 's/ubuntu.common.conf/common.conf/' $vm_lxc_config");        
-        }
+	}
         wlog (V, "LXC version: $lxc_vers ($lxc_format format)", $logp);
 
 		if ($lxc_format eq 'new') {
@@ -592,8 +592,10 @@ back_to_user();
 	        
 	        if ($nested_lxc eq 'yes') {
 		        $execution->execute( $logp, "lxc.mount.auto = $cgr_vers", *CONFIG_FILE );        
+			    $execution->execute( $logp, "lxc.apparmor.profile = generated", *CONFIG_FILE );        
+			    $execution->execute( $logp, "lxc.apparmor.allow_nesting = 1", *CONFIG_FILE );        
 		        #$execution->execute( $logp, "lxc.aa_profile=lxc-container-default-with-nesting", *CONFIG_FILE );        
-		        $execution->execute( $logp, "lxc.apparmor.profile=lxc-container-default-with-netns", *CONFIG_FILE );        
+			    #$execution->execute( $logp, "lxc.apparmor.profile=lxc-container-default-with-netns", *CONFIG_FILE );        
 	        }
 	
 			# Allow access to /dev/net/tun

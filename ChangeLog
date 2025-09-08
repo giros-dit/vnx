@@ -1,3 +1,6 @@
+8/9/25
+- Corrected a bug in DataHandler.pm related to de default_forwarding global values.
+
 24/6/25
 - Changed the way nested LXC is managed. The profile lxc-default-with-netns is not needed anymore. To enable nested containers in LXC, now the following lines are added to the config file:
     lxc.apparmor.profile = generated

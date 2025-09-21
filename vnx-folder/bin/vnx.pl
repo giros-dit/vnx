@@ -4031,7 +4031,8 @@ change_to_root();
         for my $cont (readdir $dh) {
             next if $cont eq '.' or $cont eq '..';
             my $target = readlink "$lxc_dir/$cont";
-            if ($target && index($target, $vnx_dir) == 0) {
+            #if ($target && index($target, $vnx_dir) == 0) {
+            if ($target && index($target, '/.vnx') != -1) {
 
                 # Check if the container is running and stop it
                 my $state=`lxc-info $cont | grep State | awk '{print \$2}'`; chomp($state);

@@ -115,8 +115,8 @@ $SIG{TERM} = \&handle_sig;
 # my $version = "[arroba]PACKAGE_VERSION[arroba]";[JSF]
 # my $release = "[arroba]RELEASE_DATE[arroba]";[JSF]
 #$version = "1.92beta1";
-$version = "MM.mm.rrrr"; # major.minor.revision
-$release = "DD/MM/YYYY";
+$version = "2.0b.6856"; # major.minor.revision
+$release = "09/05/2026_17:52";
 $branch = "";
 
 my $valid_fail;	              # flag used to detect error during XML validation   
@@ -244,7 +244,11 @@ sub main {
     $uid_name_orig = $uid_name;
 
 #$>=$user_id;
-    system('xhost +SI:localuser:root');
+    if ($opts{b}) {
+        system('xhost +SI:localuser:root > /dev/null');
+    } else {
+        system('xhost +SI:localuser:root');
+    }
 #$>=0;
 
     # Check if we have root priviledges. Exit if not
@@ -2401,7 +2405,7 @@ sub destroy_vm_interfaces {
             $execution->execute_root($logp, $bd->get_binaries_path_ref->{"ip"} . " link set $tun_if down");
             # To remove TUN device
             #$execution->execute_root($logp, $bd->get_binaries_path_ref->{"tunctl"} . " -d $tun_if -f " . $dh->get_tun_device);
-            $execution->execute_root($logp, $bd->get_binaries_path_ref->{"ip"} . " link del $tun_if ");
+            $execution->execute_root($logp, $bd->get_binaries_path_ref->{"ip"} . " link del $tun_if");
         } 
     }
     
@@ -5360,14 +5364,15 @@ sub create_tun_devices_for_virtual_bridged_networks  {
       
         #if ( ($dh->get_vmmgmt_type eq 'private') && ($mng_if_value ne "no") && ($vm_type ne 'lxc') && $merged_type ne 'libvirt-kvm-android' ) {
 
-        if ( ($mng_if_value ne "no") && 
+        if ( ($mng_if_value ne "no") &&
              ( ($dh->get_vmmgmt_type eq 'private' && $merged_type ne 'libvirt-kvm-android') ||
                ($dh->get_vmmgmt_type eq 'net'     && $merged_type eq 'libvirt-kvm-android') ) &&
-             ($vm_type ne 'lxc') && ($vm_type ne 'nsrouter')) {
+             ($vm_type ne 'lxc') && ($vm_type ne 'nsrouter' &&
+             $merged_type ne 'libvirt-kvm-extreme' && $merged_type ne 'libvirt-kvm-cisco')) {
 
-        #if ( ($dh->get_vmmgmt_type eq 'private') && ($mng_if_value ne "no") && ($vm_type ne 'lxc') ) {
             my $tun_if = $vm_name . "-e0";
-            $execution->execute_root($logp, $bd->get_binaries_path_ref->{"tunctl"} . " -u " . $execution->get_uid . " -t $tun_if -f " . $dh->get_tun_device);
+            ###$execution->execute_root($logp, $bd->get_binaries_path_ref->{"tunctl"} . " -u " . $execution->get_uid . " -t $tun_if -f " . $dh->get_tun_device);
+	        $execution->execute_root($logp, $bd->get_binaries_path_ref->{"ip"} . " tuntap add dev $tun_if mode tap user " . $execution->get_uid );
         }
 
 	    # If VM is of type android, create a bridge its management interface
@@ -5391,7 +5396,8 @@ sub create_tun_devices_for_virtual_bridged_networks  {
                 my $tun_if = $vm_name . "-e" . $id;
 
                 # To create TUN device
-                $execution->execute_root($logp, $bd->get_binaries_path_ref->{"tunctl"} . " -u " . $execution->get_uid . " -t $tun_if -f " . $dh->get_tun_device);
+                ###$execution->execute_root($logp, $bd->get_binaries_path_ref->{"tunctl"} . " -u " . $execution->get_uid . " -t $tun_if -f " . $dh->get_tun_device);
+	            $execution->execute_root($logp, $bd->get_binaries_path_ref->{"ip"} . " tuntap add dev $tun_if mode tap user " . $execution->get_uid );
                 # To set up device
                 $execution->execute_root($logp, $bd->get_binaries_path_ref->{"ip"} . " link set dev $tun_if up");
             }
@@ -5482,7 +5488,8 @@ sub create_bridges_for_virtual_bridged_networks  {
                 chop $brtap_mac;                       
                 # Create tap interface
                 my $brtap_name = "$net_name-e00";
-                $execution->execute_root($logp, $bd->get_binaries_path_ref->{"tunctl"} . " -u " . $execution->get_uid . " -t $brtap_name -f " . $dh->get_tun_device);
+                ###$execution->execute_root($logp, $bd->get_binaries_path_ref->{"tunctl"} . " -u " . $execution->get_uid . " -t $brtap_name -f " . $dh->get_tun_device);
+	            $execution->execute_root($logp, $bd->get_binaries_path_ref->{"ip"} . " tuntap add dev $brtap_name mode tap user " . $execution->get_uid );
                 $execution->execute_root($logp, $bd->get_binaries_path_ref->{"ip"} . " link set $brtap_name address $brtap_mac");                       
                 # Join the tap interface to bridge
                 #if ($mode eq "virtual_bridge") {
@@ -5756,7 +5763,8 @@ sub host_config {
 	  	
 		if ($net_mode eq 'uml_switch') {
 			# Create TUN device
-            $execution->execute_root($logp, $bd->get_binaries_path_ref->{"tunctl"} . " -t $net -u " . $execution->get_uid . " -f " . $dh->get_tun_device);
+            ###$execution->execute_root($logp, $bd->get_binaries_path_ref->{"tunctl"} . " -t $net -u " . $execution->get_uid . " -f " . $dh->get_tun_device);
+	        $execution->execute_root($logp, $bd->get_binaries_path_ref->{"ip"} . " tuntap add dev $net mode tap user " . $execution->get_uid );
         }
         hostif_addr_conf ($if, $net, 'add');
     }
@@ -6699,7 +6707,8 @@ sub host_unconfig {
 		if ($net_mode eq 'uml_switch') {
 	   		#$execution->execute($logp, $bd->get_binaries_path_ref->{"ifconfig"} . " $net down");
 	   		$execution->execute_root($logp, $bd->get_binaries_path_ref->{"ip"} . " link set $net down");           
-			$execution->execute_root($logp, $bd->get_binaries_path_ref->{"tunctl"} . " -d $net -f " . $dh->get_tun_device);
+			###$execution->execute_root($logp, $bd->get_binaries_path_ref->{"tunctl"} . " -d $net -f " . $dh->get_tun_device);
+            $execution->execute_root($logp, $bd->get_binaries_path_ref->{"ip"} . " link del $net");
         }
     }
 
@@ -6835,7 +6844,8 @@ sub tun_destroy {
             my $tun_if = $vm_name . "-e0";
             #$execution->execute($logp, $bd->get_binaries_path_ref->{"ifconfig"} . " $tun_if down");
             $execution->execute_root($logp, $bd->get_binaries_path_ref->{"ip"} . " link set $tun_if down");
-            $execution->execute_root($logp, $bd->get_binaries_path_ref->{"tunctl"} . " -d $tun_if -f " . $dh->get_tun_device);
+            ###$execution->execute_root($logp, $bd->get_binaries_path_ref->{"tunctl"} . " -d $tun_if -f " . $dh->get_tun_device);
+            $execution->execute_root($logp, $bd->get_binaries_path_ref->{"ip"} . " link del $tun_if");
         }
 
         # To get interfaces list
@@ -6853,7 +6863,8 @@ sub tun_destroy {
 	            #$execution->execute($logp, $bd->get_binaries_path_ref->{"ifconfig"} . " $tun_if down");
 	            $execution->execute_root($logp, $bd->get_binaries_path_ref->{"ip"} . " link set $tun_if down");
 	            # To remove TUN device
-	            $execution->execute_root($logp, $bd->get_binaries_path_ref->{"tunctl"} . " -d $tun_if -f " . $dh->get_tun_device);
+	            ###$execution->execute_root($logp, $bd->get_binaries_path_ref->{"tunctl"} . " -d $tun_if -f " . $dh->get_tun_device);
+                $execution->execute_root($logp, $bd->get_binaries_path_ref->{"ip"} . " link del $tun_if");
             }
 
         }
@@ -6935,7 +6946,8 @@ sub bridges_destroy {
                 if ($mode eq "virtual_bridge") {
                     # Destroy the tap associated with the bridge
                     $execution->execute_root($logp, $bd->get_binaries_path_ref->{"ip"} . " link set ${net_name}-e00 down");
-                    $execution->execute_root($logp, $bd->get_binaries_path_ref->{"tunctl"} . " -d ${net_name}-e00");
+                    ###$execution->execute_root($logp, $bd->get_binaries_path_ref->{"tunctl"} . " -d ${net_name}-e00");
+                    $execution->execute_root($logp, $bd->get_binaries_path_ref->{"ip"} . " link del ${net_name}-e00");
                 }            
                 # Destroy the bridge
                 #$execution->execute($logp, $bd->get_binaries_path_ref->{"ifconfig"} . " $net_name down");
@@ -8030,7 +8042,8 @@ sub mgmt_sock_create {
       $effective_mask = slashed_to_dotted_mask($mask);
    }
 
-   $execution->execute_root($logp, $bd->get_binaries_path_ref->{"tunctl"} . " -u $user -t $tap");
+   ###$execution->execute_root($logp, $bd->get_binaries_path_ref->{"tunctl"} . " -u $user -t $tap");
+   $execution->execute_root($logp, $bd->get_binaries_path_ref->{"ip"} . " tuntap add dev $tap mode tap user $user ");
 
    #$execution->execute($logp, $bd->get_binaries_path_ref->{"ifconfig"} . " $tap $hostip netmask $effective_mask up");
    my $ip_addr = NetAddr::IP->new($hostip,$effective_mask);
@@ -8058,7 +8071,8 @@ sub mgmt_sock_destroy {
    $execution->execute_root($logp, $bd->get_binaries_path_ref->{"rm"} . " $socket");
    #$execution->execute($logp, $bd->get_binaries_path_ref->{"ifconfig"} . " $tap down");
    $execution->execute_root($logp, $bd->get_binaries_path_ref->{"ip"} . " link set dev $tap down");
-   $execution->execute_root($logp, $bd->get_binaries_path_ref->{"tunctl"} . " -d $tap");
+   ###$execution->execute_root($logp, $bd->get_binaries_path_ref->{"tunctl"} . " -d $tap");
+   $execution->execute_root($logp, $bd->get_binaries_path_ref->{"ip"} . " link del $tap");
 }
 =END
 =cut

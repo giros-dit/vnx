@@ -22,12 +22,29 @@ fi
 
 # Clean command history
 rm -f /root/.bash_history
+rm -f /home/*/.bash_history
+
+# Clean ssh data
+rm -f /root/.ssh/authorized_keys /root/.ssh/known_hosts
+rm -f /home/*/.ssh/authorized_keys /home/*/.ssh/known_hosts
 
 # Delete udev net rules files:
 rm -f /etc/udev/rules.d/70-persistent-net.rules
 
 # Delete VNXACE log
 rm -f /var/log/vnxaced.log
+
+# Delete logs
+sudo rm -f /var/log/*.gz
+for i in {1..9}; do rm -f /var/log/*.$i; done
+sudo rm -f /var/crash/*
+
+# Recreate swap file full of zeros
+sudo swapoff /swap.img
+sudo dd if=/dev/zero of=/swap.img bs=1M count=1024
+sudo chmod 600 /swap.img
+sudo mkswap /swap.img
+sudo swapon /swap.img
 
 if [ ! $NOINTMODE ]; then
     while true; do
@@ -66,4 +83,4 @@ elif [ ! -e /proc/1/root -o "$(stat -c %d:%i /)" != "$(stat -c %d:%i /proc/1/roo
 fi
 
 # We are NOT chrooted! We halt the virtual machine
-halt -p
+#halt -p

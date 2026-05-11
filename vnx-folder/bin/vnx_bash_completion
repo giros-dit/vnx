@@ -68,13 +68,13 @@ _vnx()
                             scenario=(${scenario_opt// / })
                             #pars=${scenario[1]}
                             if [ -r ${scenario[1]} ]; then
-                                pars=`sudo vnx $scenario_opt $moption --exe-info -b`
+                                pars=`sudo vnx $scenario_opt $moption --exe-info -b | xargs -n1 | sort -u | xargs`
                                 COMPREPLY=( $(compgen -W "${pars}" -- ${cur}) )
                             fi
                          elif [[ $line == *" -s "* || $line == *" --scenario "* ]]; then
                             scenario_opt=`echo $line | awk '{ for (x=1;x<=NF;x++) if ($x~"-s" || $x~"--scenario") print $x " " $(x+1) }'`
                             moption=`echo $line | awk '{ for (x=1;x<=NF;x++) if ($x~"-M") print $x " " $(x+1) }'`
-                            pars=`sudo vnx $scenario_opt $moption --exe-info -b`
+                            pars=`sudo vnx $scenario_opt $moption --exe-info -b | xargs -n1 | sort -u | xargs`
                             COMPREPLY=( $(compgen -W "${pars}" -- ${cur}) )
 
                             #vnx_dir=$( cat /etc/vnx.conf | grep "^vnx_dir" | sed -e 's/vnx_dir=//' )

@@ -1,3 +1,7 @@
+11/5/26
+- Corrected a bug in vnx.pl that prevented cisco and extreme vms to start ('Error calling qemu:///system hypervisor libvirt error code: 55, message: Requested operation is not valid: The rcL-e0 interface already exists)
+- Eliminated the requirement to install uml-utilities package, as it is not available in new distributions. As a side efect, the tunctl command had to be substituted by the 'ip tuntap' equivalent command. 
+
 18/9/25
 - Corrected a bug in DataHandler.pm related to de default_forwarding global values.
 - Modified mode_cleanhost to delete all LXC container even if the link in /var/lib/lxc does not point to actual VNX_DIR
